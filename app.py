@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
+from datetime import datetime
 
 
 # Initialize Flask app
@@ -46,7 +47,8 @@ def handle_signup():
             return render_template("signup.html",error="Username already taken!")
         
         hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
-        new_user = Users(username=username, password=hashed_password,role=role)
+        created_at = datetime.now()
+        new_user = Users(username=username, password=hashed_password,role=role, creation_date = created_at)
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for("handle_login"))
