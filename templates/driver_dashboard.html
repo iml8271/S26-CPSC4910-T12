@@ -10,6 +10,7 @@
 <p>Welcome! {{ username }}</p><br>
 <p>Your balance is {{ points }}</p>
 <p><a href="{{ url_for('driver_catalog') }}">View Catalog</a></p><br>
+<a href="{{ url_for('driver_faq') }}">Frequently Asked Questions</a><br>
 <a href="{{ url_for('auth.handle_logout') }}">Logout</a>
 </div>
 {% endblock %}

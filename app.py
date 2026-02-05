@@ -116,6 +116,11 @@ def driver_catalog():
     ]
     return render_template("driver_catalog.html", items=items)
 
+@app.route("/driver/dashboard/driver_faq")
+@login_required
+def driver_faq():
+    return render_template("driver_faq.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
