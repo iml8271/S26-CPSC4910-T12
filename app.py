@@ -105,6 +105,17 @@ def terms():
 def about():
     return render_template("about.html")
 
+@app.route("/driver/dashboard/driver_catalog")
+@login_required
+def driver_catalog():
+    #we can remove these after we make a catalog for sponors
+    items = [
+        {"item1": {"name": "Jar Of Dirt", "price": 1}},
+        {"item2": {"name": "CV Radio", "price": 1500}},
+        {"item3": {"name": "$50 Taco Bell Gift Card", "price": 3000}},
+    ]
+    return render_template("driver_catalog.html", items=items)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
@@ -134,7 +145,7 @@ def update_email():
 @login_required
 def add_shipping_info():
     first_name = request.form.get("first_name")
-    last_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
     house_num = request.form.get("house_num")
     street_name = request.form.get("street_name")
     city_name = request.form.get("city_name")
@@ -148,6 +159,5 @@ def add_shipping_info():
                           city = city_name, state = state, zipcode = zip_code, country = country, nickname = nickname,
                           email = email)
     db.session.add(new_address)
-
 
 
