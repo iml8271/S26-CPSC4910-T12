@@ -110,9 +110,9 @@ def about():
 def driver_catalog():
     #we can remove these after we make a catalog for sponors
     items = [
-        {"item1": {"name": "Jar Of Dirt", "price": 1}},
-        {"item2": {"name": "CV Radio", "price": 1500}},
-        {"item3": {"name": "$50 Taco Bell Gift Card", "price": 3000}},
+        {"name": "Jar Of Dirt", "price": 1},
+        {"name": "CV Radio", "price": 1500},
+        {"name": "$50 Taco Bell Gift Card", "price": 3000},
     ]
     return render_template("driver_catalog.html", items=items)
 
