@@ -7,11 +7,15 @@
 {% block body %}
 <a href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>
 <div class="center-body-div">
-<h1>Settings - Sponsor</h1>
-<form>
-
-</form>
-<a href="">Upload </a>
-<a href="{{ url_for('auth.handle_logout') }}">Logout</a>
+    <h1>Settings - Sponsor</h1>
+    <form>
+            <label for="sponsor-logo">Choose a Sponsor Logo:</label>
+    <br>
+    <input type="file" id="sponsor-logo" name="sponsor-logo" accept="image/png, image/jpeg" />
+    <br><br>
+    <button type="submit">Update</button>
+    </form>
+    <br><br>
+    <a href="{{ url_for('auth.handle_logout') }}">Logout</a>
 </div>
 {% endblock %}

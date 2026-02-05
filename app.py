@@ -62,6 +62,9 @@ def role_required(*roles):
 
 # ----- Sponsor Speficic--------------------
 @app.route("/settings/sponsor")
+@role_required("sponsor")
+def sponsor_settings():
+    return render_template("sponsor_settings.html", username=current_user.username)
 
 # ------------ Protected dashboard Route --------------
 @app.route("/admin/dashboard")
