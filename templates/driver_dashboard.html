@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Dashboard</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+<h1>Logged in as Driver!</h1>
+<p>Welcome! {{ username }}</p><br>
+<p>Your balance is {{ points }}</p>
+<a href="{{ url_for('auth.handle_logout') }}">Logout</a>
+</div>
+{% endblock %}

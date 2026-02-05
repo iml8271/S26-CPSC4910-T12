@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>About</title>
+{% endblock %}
+
+{% block body %}
+<a href="{{ url_for('auth.handle_login') }}">Back</a>
+<div class="center-body-div">
+    <h2>About Page</h2>
+    <ul>
+        <li>Team# 12</li>
+        <li>Version# 1</li>
+        <li>Release Date: 2/5/26</li>
+        <li>PointPitStop:</li>
+        <li>Currently: Currently a page that allows users to login,
+            change passwords, and create users.
+        </li>
+    </ul>
+</div>
+{% endblock %}
