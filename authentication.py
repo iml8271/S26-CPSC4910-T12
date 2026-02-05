@@ -2,7 +2,8 @@ from flask import Flask, Blueprint,render_template, request, redirect, url_for, 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from models import db,Users
+from models import db,Users,DriverProfile
+from datetime import datetime
 
 auth_bp = Blueprint("auth",__name__)
 
@@ -35,6 +36,7 @@ def handle_signup():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
+        email = request.form.get("email")
         role = request.form.get("role")
 
         # Checks if username already exists
@@ -50,12 +52,75 @@ def handle_signup():
         if not get_password_strength(password):
             return render_template("signup.html", error="Password does not meet minimums")
         
+        #Email Checker
+        #tba
+        
         hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
-        new_user = Users(username=username, password=hashed_password,role=role)
+        created_at = datetime.now()
+        new_user = Users(username=username, password=hashed_password,email=email,role=role,creation_date = created_at)
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for("auth.handle_login"))
     return render_template("signup.html")
+
+# Signup Driver
+@auth_bp.route('/signup_driver', methods=["GET","POST"])
+def handle_driver_signup():
+    if request.method == "POST":
+        firstname = request.form.get("firstname")
+        lastname = request.form.get("lastname")
+        streetname = request.form.get("streetname")
+        city = request.form.get("city")
+        zipcode = request.form.get("zipcode")
+        username = request.form.get("username")
+        password = request.form.get("password")
+        email = request.form.get("email")
+        role = "driver"
+        sponsor = request.form.get("sponsor")
+
+        #First Name Checker
+        #tba
+
+        #Last Name Checker
+        #tba
+
+        #Address Checker
+        #tba
+
+        # Checks if username already exists
+        if Users.query.filter_by(username=username).first():
+            return render_template("driver_signup.html",error="Username already taken!")
+        
+        # Checks if password meets minimum requirements:
+        # minimum 8 characters,no whitespaces,
+        # 1 Uppercase, 1 lowercase, 1 number
+        if not password:
+            return render_template("signup.html", error="Password required")
+
+        if not get_password_strength(password):
+            return render_template("signup.html", error="Password does not meet minimums")
+        
+        hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
+        
+        #Email Checker
+        #tba
+
+        #Sponsor Link
+        
+        #Creation Time
+        created_at = datetime.now()
+
+
+        new_user = Users(username=username, password=hashed_password,email=email,role=role,creation_date = created_at)
+        db.session.add(new_user)
+        db.session.flush()
+        new_driver = DriverProfile(user_id=new_user.id,firstname=firstname,lastname=lastname,streetname=streetname,city=city,zipcode=zipcode,sponsor=sponsor)
+        db.session.add(new_driver)
+        db.session.commit()
+        return redirect(url_for("auth.handle_login"))
+    return render_template("driver_signup.html")
+
+
 
 # Forgot Password
 @auth_bp.route("/forgot_password", methods=["GET","POST"])

@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users
+from models import db,Users,DriverProfile
 from datetime import datetime
 
 
@@ -30,49 +30,8 @@ with app.app_context():
 # Load user for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
-    return Users.query.get(int(user_id))
+    return db.session.get(Users, int(user_id))
 
-# Register Route:
-# registering new users into the system, currently works for only creating new drivers
-# as admins and sponsors will be added later or manually
-@app.route('/signup', methods=["GET","POST"])
-def handle_signup():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        role = request.form.get("role")
-
-        if Users.query.filter_by(username=username).first():
-            return render_template("signup.html",error="Username already taken!")
-        
-        hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
-        created_at = datetime.now()
-        new_user = Users(username=username, password=hashed_password,role=role, creation_date = created_at)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for("handle_login"))
-    return render_template("signup.html")
-
-# Login route
-@app.route("/login", methods=["GET","POST"])
-def handle_login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-
-        user = Users.query.filter_by(username=username).first()
-
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            if user.role == "admin":
-                return redirect(url_for("dashboard"))
-            elif user.role == "sponsor":
-                return redirect(url_for("dashboard"))
-            else:
-                return redirect(url_for("dashboard"))
-        else:
-            return render_template("login.html", error="Invalid username or password")
-    return render_template("login.html") 
 
 # Logout Route
 @app.route("/logout")
@@ -115,7 +74,9 @@ def sponsor_dashboard():
 @app.route("/dashboard/driver")
 @role_required("driver")
 def driver_dashboard():
-    return render_template("driver_dashboard.html", username=current_user.username)
+    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
+    points = profile.points if profile else 0
+    return render_template("driver_dashboard.html", username=current_user.username,points=points)
 
 # Home Route
 @app.route("/")

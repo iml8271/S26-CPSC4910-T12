@@ -17,16 +17,19 @@
         <label for="password">Password:</label>
         <input id="password"
             type="text" name="password" placeholder="Password" required><br>
+        <label for="email">Email:</label>
+        <input id="email"
+            type="text" name="email" placeholder="Email" required><br>    
         <p>Minimum: 8 characters, 1 uppercase, 1 lowercase, and 1 digit (0-9)</p>
         <label for="role">Role:</label>
         <select name="role" id="role">
             <option value="admin">Admin</option>
             <option value="sponsor">Sponsor</option>
-            <option value="driver">Driver</option>
         </select>
         <p>Full Name,Sponsor, Birthday, etc.</p>
         <br>
         <button type="submit">Sign Up</button>
     </form>
+    {% if error %} <p class="error"> {{ error }}</p> {% endif %}
 </div>
 {% endblock %}
