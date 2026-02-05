@@ -121,6 +121,17 @@ def driver_catalog():
 def driver_faq():
     return render_template("driver_faq.html")
 
+@app.route("/driver/dashboard/driver_points_review")
+@login_required
+def driver_points_review():
+    #filler for now, will use db when added.
+    points_log = [
+        {"date": "2024-01-15", "points": 100, "description": "Max Points, No Infractions"},
+        {"date": "2024-01-20", "points": 50, "description": "50 Points Deducted for Speeding"},
+        {"date": "2024-02-05", "points": 100, "description": "Max Points, No Infractions"},
+    ]
+    return render_template("driver_points_review.html",points_log=points_log)
+
 
 if __name__ == "__main__":
     app.run(debug=True)

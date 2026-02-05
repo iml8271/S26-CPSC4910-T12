@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Driver_FAQ</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+
+<h1>Points History</h1>
+<p>Your balance is {{ points }}</p>
+<p> Max Available Daily Points: 100</p>
+<p>Here is a review of your recent points activity:</p>
+
+<div class="points log">
+    
+
+    {% for entry in points_log %}
+        <div class="points-entry">
+            <p>Date: {{ entry.date }}</p>
+            <p>Points Earned: {{ entry.points}}</p>
+            <p>Description: {{ entry.description }}</p>
+            <button>Dispute</button>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}
