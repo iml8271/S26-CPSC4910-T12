@@ -26,6 +26,21 @@ class Users(UserMixin, db.Model):
     password = db.Column(db.String(250),nullable=False)
     role = db.Column(db.String(250),nullable=False)
     creation_date = db.Column(db.DateTime, default=datetime, nullable=False)
+
+class Address(db.Model):
+    email = db.Column(db.String(250), unique=True, nullable=False)
+    fname = db.Column(db.String(250), nullable=False)
+    lname = db.Column(db.String(250), nullable=False)
+    house_no = db.Column(db.String(250), nullable=False)
+    street = db.Column(db.String(250), nullable=False)
+    city = db.Column(db.String(250), nullable=False)
+    state = db.Column(db.String(250), nullable=False)
+    zipcode = db.Column(db.String(250), nullable=False)
+    country = db.Column(db.String(250), nullable=False)
+    nickname = db.Column(db.String(250), nullable=False)
+
+
+
 # Create database
 with app.app_context():
     db.create_all()    
@@ -148,4 +163,12 @@ def add_shipping_info():
     zip_code = request.form.get("zip_code")
     country = request.form.get("country")
     nickname = request.form.get("nickname")
+    email = current_user.email
+
+    new_address = Address(fname = first_name, lname = last_name, house_no = house_num, street = street_name,
+                          city = city_name, state = state, zipcode = zip_code, country = country, nickname = nickname,
+                          email = email)
+    db.session.add(new_address)
+
+
 
