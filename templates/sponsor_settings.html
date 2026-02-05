@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Dashboard</title>
+<title>Sponsor-Settings</title>
 {% endblock %}
 
 {% block body %}
+<a href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>
 <div class="center-body-div">
-<h1>Logged in as Driver!</h1>
-<p>Welcome! {{ username }}</p><br>
-<p>Your balance is {{ points }}</p>
+<h1>Settings - Sponsor</h1>
+<form>
+
+</form>
+<a href="">Upload </a>
 <a href="{{ url_for('auth.handle_logout') }}">Logout</a>
 </div>
 {% endblock %}

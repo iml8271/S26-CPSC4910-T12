@@ -5,6 +5,10 @@
 {% endblock %}
 
 {% block body %}
+<div class="center-body-div">
 <h1>Logged in as Sponsor!</h1>
+<a href="{{ url_for('auth.handle_logout') }}">Settings</a>
+<br>
 <a href="{{ url_for('auth.handle_logout') }}">Logout</a>
+</div>
 {% endblock %}

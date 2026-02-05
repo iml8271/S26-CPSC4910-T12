@@ -11,7 +11,7 @@ from datetime import datetime
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "giggle-gang"
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///usersdb.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pointfleetdb.db"
 app.config["SECRET_KEY"] = "giggle-gang"
 
 #Bind db
@@ -60,24 +60,28 @@ def role_required(*roles):
         return decorated_view
     return wrapper
 
-# Protected dashboard Route
-@app.route("/dashboard/admin")
+# ----- Sponsor Speficic--------------------
+@app.route("/settings/sponsor")
+
+# ------------ Protected dashboard Route --------------
+@app.route("/admin/dashboard")
 @role_required("admin")
-def admin_dashboard():
+def view_admin_dashboard():
     return render_template("admin_dashboard.html", username=current_user.username)
 
-@app.route("/dashboard/sponsor")
+@app.route("/sponsor/dashboard")
 @role_required("sponsor")
-def sponsor_dashboard():
+def view_sponsor_dashboard():
     return render_template("sponsor_dashboard.html", username=current_user.username)
 
-@app.route("/dashboard/driver")
+@app.route("/driver/dashboard")
 @role_required("driver")
-def driver_dashboard():
+def view_driver_dashboard():
     profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
     points = profile.points if profile else 0
     return render_template("driver_dashboard.html", username=current_user.username,points=points)
 
+#------------ Universal Routes--------------
 # Home Route
 @app.route("/")
 def view_form():

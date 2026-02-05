@@ -7,7 +7,7 @@
 {% block body %}
 <div class="center-body-div">
     <a href="{{ url_for('auth.handle_login') }}">Back</a>
-    <h2>Signup Page - Driver</h2>
+    <h2>Signup Page - Sponsor</h2>
     <h3> Create an Account</h3>
     <form id="signup-form" method="POST"
         action="{{ url_for('auth.handle_driver_signup') }}">
@@ -18,14 +18,7 @@
         <label for="lastname">Last Name:</label>
         <input id="lastname"
             type="text" name="lastname" placeholder="Last Name"><br>
-        <label for="streetname">Address:</label>
-        <input id="streetname"
-            type="text" name="streetname" placeholder="Street Name"><br>
-        <input id="city"
-            type="text" name="city" placeholder="City"><br>
-        <input id="zipcode"
-            type="text" name="zipcode" placeholder="Zipcode"><br>
-        
+
         <h5>Portal Info</h5>
         <label for="username">Username:</label>
         <input id="username"
@@ -38,11 +31,11 @@
         <input id="email"
             type="text" name="email" placeholder="Email" required><br>    
         
-        <label for="company">Select Sponsor Company:</label>
-        <select name="company_id" id="company" required>
-            {% for company in companies %}
-                <option value="{{ company.id }}">{{ company.name }}</option>
-            {% endfor %}
+        <label for="sponsor">Sponsor:</label>
+        <select name="sponsor" id="sponsor">
+            <option value="SponsorA">SponsorA</option>
+            <option value="SponsorB">SponsorB</option>
+            <option value="SponsorC">SponsorC</option>
         </select>
         <br>
         <button type="submit">Sign Up</button>
