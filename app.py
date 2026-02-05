@@ -21,9 +21,11 @@ login_manager.login_view = "login"
 # User model
 class Users(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(250), unique=True, nullable=False)
     username = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.String(250),nullable=False)
     role = db.Column(db.String(250),nullable=False)
+    creation_date = db.Column(db.DateTime, default=datetime, nullable=False)
 # Create database
 with app.app_context():
     db.create_all()    
@@ -112,4 +114,38 @@ def forbidden(e):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+@app.route("/driver_profile")
+@login_required
+def profile():
+    # current_user already holds the data from the DB
+    return render_template("driver_profile.html", user=current_user)
+
+
+@app.route("/update-email", methods=["POST"])
+@login_required
+def update_email():
+    new_email = request.form.get("email")
+
+    if not new_email:
+        return redirect(url_for("dashboard", error="Email cannot be empty"))
+
+    current_user.email = new_email
+    db.session.commit()
+
+    return redirect(url_for("dashboard", message="Email updated successfully!"))
+
+@app.route("/add-shipping-info", methods=["POST"])
+@login_required
+def add_shipping_info():
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("first_name")
+    house_num = request.form.get("house_num")
+    street_name = request.form.get("street_name")
+    city_name = request.form.get("city_name")
+    state = request.form.get("state")
+    zip_code = request.form.get("zip_code")
+    country = request.form.get("country")
+    nickname = request.form.get("nickname")
 
