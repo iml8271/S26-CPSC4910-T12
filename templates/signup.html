@@ -1,26 +1,28 @@
 {% extends "base.html" %}
 
 {% block head %}
-
+<title>Signup</title>
 {% endblock %}
 
 {% block body %}
-<div>
+<div class="center-body-div">
+    <a href="{{ url_for('auth.handle_login') }}">Back</a>
     <h2>Signup Page</h2>
     <h3> Create an Account</h3>
     <form id="signup-form" method="POST"
-        action="{{ url_for('handle_signup') }}">
+        action="{{ url_for('auth.handle_signup') }}">
         <label for="username">Username:</label>
         <input id="username"
             type="text" name="username" placeholder="Username"><br>
         <label for="password">Password:</label>
         <input id="password"
             type="text" name="password" placeholder="Password" required><br>
+        <p>Minimum: 8 characters, 1 uppercase, 1 lowercase, and 1 digit (0-9)</p>
         <label for="role">Role:</label>
         <select name="role" id="role">
-            <option value="Admin">Admin</option>
-            <option value="Sponsor">Sponsor</option>
-            <option value="Driver">Driver</option>
+            <option value="admin">Admin</option>
+            <option value="sponsor">Sponsor</option>
+            <option value="driver">Driver</option>
         </select>
         <p>Full Name,Sponsor, Birthday, etc.</p>
         <br>

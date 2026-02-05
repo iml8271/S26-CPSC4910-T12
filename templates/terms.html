@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block head %}<title>Terms</title>{% endblock %}
+
+{% block body %}
+<a href="{{ url_for('app.handle_login') }}">Back</a>
+<h2>Terms & Conditions</h2>
+<p>
+    Your terms and conditions text goes here.
+</p>
+{% endblock %}
