@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session,abort
+from flask import Flask, render_template, request, redirect, url_for, session,abort,flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile
+from models import db,Users,DriverProfile,SponsorProfile
 from datetime import datetime
 
 
@@ -66,6 +66,18 @@ def role_required(*roles):
 def sponsor_settings():
     return render_template("sponsor_settings.html", username=current_user.username)
 
+@app.route("/sponsor/driver_list", methods=["GET","POST"])
+@role_required("sponsor")
+def sponsor_view_drivers():
+    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    if not sponsor:
+        return redirect(url_for("view_sponsor_dashboard"))
+    drivers = DriverProfile.query.filter_by(company_id=sponsor.company_id).all()
+    return render_template("sponsor_view_drivers.html",drivers=drivers)
+
+# ------- Driver Spefici ------------------
+
+
 # ------------ Protected dashboard Route --------------
 @app.route("/admin/dashboard")
 @role_required("admin")
@@ -75,7 +87,8 @@ def view_admin_dashboard():
 @app.route("/sponsor/dashboard")
 @role_required("sponsor")
 def view_sponsor_dashboard():
-    return render_template("sponsor_dashboard.html", username=current_user.username)
+    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    return render_template("sponsor_dashboard.html", username=current_user.username,firstname=sponsor_profile.firstname)
 
 @app.route("/driver/dashboard")
 @role_required("driver")

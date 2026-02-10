@@ -6,9 +6,9 @@
 
 {% block body %}
 <div class="center-body-div">
-<h1>Logged in as Sponsor!</h1>
-<a href="{{ url_for('sponsor_settings') }}">Settings</a>
+<h1>Logged in as Sponsor {{ firstname }}!</h1>
+<a href="{{ url_for('sponsor_view_drivers') }}">My Drivers</a>
 <br>
-<a href="{{ url_for('auth.handle_logout') }}">Logout</a>
+
 </div>
 {% endblock %}

@@ -69,11 +69,10 @@ def handle_driver_signup():
     companies = SponsorCompany.query.order_by(SponsorCompany.name).all()
 
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        email = request.form.get("email")
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
+        email = request.form.get("email").strip()
         role = "driver"
-        sponsor = request.form.get("sponsor")
 
         #First Name Checker
         firstname = request.form.get("firstname")
@@ -106,22 +105,33 @@ def handle_driver_signup():
         
         #Email Checker
         #tba
+        if Users.query.filter_by(email=email).first():
+            return render_template("driver_signup.html", error="Email already registered")
 
         #Sponsor Link
         company_id = request.form.get("company_id")
+        if not company_id:
+            return render_template("driver_signup.html", error="Invalid sponsor company selected")
+
+        company_id = int(company_id)
 
         if not company_id:
             return render_template("driver_signup.html", error="Invalid sponsor company selected")
-        
-        #Creation Time
-        created_at = datetime.now()
 
-
-        new_user = Users(username=username, password=hashed_password,email=email,role=role,creation_date = created_at)
+        new_user = Users(username=username,
+            password=hashed_password,
+            email=email,
+            role=role,
+        )
+        new_user.driver_profile = DriverProfile(
+            firstname=firstname,
+            lastname=lastname,
+            streetname=streetname,
+            city=city,
+            zipcode=zipcode,
+            company_id=company_id
+        )
         db.session.add(new_user)
-        db.session.flush()
-        new_driver = DriverProfile(user_id=new_user.id,firstname=firstname,lastname=lastname,streetname=streetname,city=city,zipcode=zipcode,company_id=company_id)
-        db.session.add(new_driver)
         db.session.commit()
         return redirect(url_for("auth.handle_login"))
     return render_template("driver_signup.html",companies=companies)
