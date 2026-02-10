@@ -73,10 +73,12 @@ class SponsorCompany(db.Model):
 
 class SupportRequest(db.Model):
     __tablename__ = "support_requests"
+    #info about the source
     req_id = db.Column(db.Integer, primary_key = True)
     source_id = db.Column(db.Integer, nullable = False)
-    source_email = db.Column(db.String(120), nullable = False)
-    source_org = db.Column(db.String(150), nullable = False)
+    source_org = db.Column(db.Integer, nullable = False)
+
+    #info about the request
     req_type = db.Column(db.String(100), nullable = False)
     req_details = db.Column(db.String(10000), nullable = False)
     creation_date = db.Column(db.DateTime, nullable = False)
