@@ -140,6 +140,8 @@ class SponsorCompany(db.Model):
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     drivers = db.relationship("DriverProfile",back_populates="company")
 
+
+## SUPPORT -----
 class SupportRequest(db.Model):
     __tablename__ = "support_requests"
     #info about the source
@@ -152,4 +154,3 @@ class SupportRequest(db.Model):
     req_details = db.Column(db.String(10000), nullable = False)
     creation_date = db.Column(db.DateTime, nullable = False)
     status = db.Column(db.String(20), nullable=False, default="Open")
-

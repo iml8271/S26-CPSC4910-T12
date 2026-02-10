@@ -2,7 +2,7 @@ from flask import Flask, Blueprint,render_template, request, redirect, url_for, 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from models import db,Users,DriverProfile,SponsorCompany
+from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile
 from datetime import datetime
 
 auth_bp = Blueprint("auth",__name__)
@@ -75,11 +75,11 @@ def handle_driver_signup():
         role = "driver"
 
         #First Name Checker
-        firstname = request.form.get("firstname")
+        firstname = request.form.get("firstname").strip()
         #tba
 
         #Last Name Checker
-        lastname = request.form.get("lastname")
+        lastname = request.form.get("lastname").strip()
         #tba
 
         #Address Checker
@@ -139,9 +139,65 @@ def handle_driver_signup():
 # Signup - Sponsor
 @auth_bp.route('/signup_sponsor', methods=["GET","POST"])
 def handle_sponsor_signup():
+    companies = SponsorCompany.query.order_by(SponsorCompany.name).all()
+    
     if request.method == "POST":
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
+        email = request.form.get("email").strip()
+        role = "sponsor"
+
+        #First Name Checker
+        firstname = request.form.get("firstname").strip()
+        #tba
+
+        #Last Name Checker
+        lastname = request.form.get("lastname").strip()
+        #tba
+
+        # Checks if username already exists
+        if Users.query.filter_by(username=username).first():
+            return render_template("driver_signup.html",error="Username already taken!")
+        
+        # Checks if password meets minimum requirements:
+        # minimum 8 characters,no whitespaces,
+        # 1 Uppercase, 1 lowercase, 1 number
+        if not password:
+            return render_template("signup.html", error="Password required")
+
+        if not get_password_strength(password):
+            return render_template("signup.html", error="Password does not meet minimums")
+        
+        hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
+        
+        #Email Checker
+        #tba
+        if Users.query.filter_by(email=email).first():
+            return render_template("driver_signup.html", error="Email already registered")
+
+        # Company
+        company_id = request.form.get("company_id")
+        if not company_id:
+            return render_template("driver_signup.html", error="Invalid sponsor company selected")
+        company_id = int(company_id)
+
+        # Commit
+        new_user = Users(
+            username=username,
+            password=hashed_password,
+            email=email,
+            role=role,
+        )
+        new_user.sponsor_profile = SponsorProfile(
+            firstname=firstname,
+            lastname=lastname,
+            company_id=company_id
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
         return redirect(url_for("auth.handle_login"))
-    return render_template("sponsor_signup.html")
+    return render_template("sponsor_signup.html",companies=companies)
 
 
 

@@ -10,15 +10,7 @@
     <h2>Signup Page - Sponsor</h2>
     <h3> Create an Account</h3>
     <form id="signup-form" method="POST"
-        action="{{ url_for('auth.handle_driver_signup') }}">
-        <h5>Personal Info.</h5>
-        <label for="firstname">First Name:</label>
-        <input id="firstname"
-            type="text" name="firstname" placeholder="First Name"><br>
-        <label for="lastname">Last Name:</label>
-        <input id="lastname"
-            type="text" name="lastname" placeholder="Last Name"><br>
-
+        action="{{ url_for('auth.handle_sponsor_signup') }}">
         <h5>Portal Info</h5>
         <label for="username">Username:</label>
         <input id="username"
@@ -29,13 +21,21 @@
             <p>Minimum: 8 characters, 1 uppercase, 1 lowercase, and 1 digit (0-9)</p>
         <label for="email">Email:</label>
         <input id="email"
-            type="text" name="email" placeholder="Email" required><br>    
-        
-        <label for="sponsor">Sponsor:</label>
-        <select name="sponsor" id="sponsor">
-            <option value="SponsorA">SponsorA</option>
-            <option value="SponsorB">SponsorB</option>
-            <option value="SponsorC">SponsorC</option>
+            type="text" name="email" placeholder="Email" required><br>   
+
+        <h5>Personal Info.</h5>
+        <label for="firstname">First Name:</label>
+        <input id="firstname"
+            type="text" name="firstname" placeholder="First Name"><br>
+        <label for="lastname">Last Name:</label>
+        <input id="lastname"
+            type="text" name="lastname" placeholder="Last Name"><br>
+  
+        <label for="company">Sponsor:</label>
+        <select name="company_id" id="company">
+            {% for company in companies %}
+                <option value="{{ company.id }}">{{ company.name }}</option>
+            {% endfor %}
         </select>
         <br>
         <button type="submit">Sign Up</button>
