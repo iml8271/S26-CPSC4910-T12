@@ -70,3 +70,15 @@ class SponsorCompany(db.Model):
     phone = db.Column(db.String(50), nullable=False)
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     drivers = db.relationship("DriverProfile",back_populates="company")
+
+class SupportRequest(db.Model):
+    __tablename__ = "support_requests"
+    req_id = db.Column(db.Integer, primary_key = True)
+    source_id = db.Column(db.Integer, nullable = False)
+    source_email = db.Column(db.String(120), nullable = False)
+    source_org = db.Column(db.String(150), nullable = False)
+    req_type = db.Column(db.String(100), nullable = False)
+    req_details = db.Column(db.String(10000), nullable = False)
+    creation_date = db.Column(db.DateTime, nullable = False)
+    status = db.Column(db.String(20), nullable=False, default="Open")
+
