@@ -9,20 +9,20 @@
 <p>Here, you can request help from either a team member of your sponsor, or a member of our own team!</p>
 
 <form>
-<label for="request_type"> What would you like help with? </label>
-<select name="request type" id = "request_type">
-    <option value="ordering">Placing an Order</option>
-    <option value="balance">My Point Balance</option>
-    <option value="application">My Application to a Sponsor Organization</option>
-    <option value="account">My Account Information</option>
-    <option value="Other">Other</option>
-</select>
-
+    <label for="request_type"> What would you like help with? </label>
+    <select name="request type" id = "request_type">
+        <option value="ordering">Placing an Order</option>
+        <option value="balance">My Point Balance</option>
+        <option value="application">My Application to a Sponsor Organization</option>
+        <option value="account">My Account Information</option>
+        <option value="Other">Other</option>
+    </select>
+    <br>
     <label for="details"> Please tell us about your problem </label>
     <input id="details"
             type="text" name="details"></input>
-
-
+    <br>
+    <button type="submit">Submit Request</button>
 </form>
 {% endblock %}
 

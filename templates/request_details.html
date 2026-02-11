@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Request Details | {{ request.req_id }}</title>
+{% endblock %}
+
+{% block body %}
+<h1>Request Details</h1>
+
+
+
+<h2>Request ID</h2>
+<p>{{ request.req_id }}</p>
+
+<h2>Submitted By</h2>
+<p>{{ request.source_id }}</p>
+
+<h2>From</h2>
+<p>{{ request.source_org }}</p>
+
+<h2>Request Type</h2>
+<p>{{ request.req_type }}</p>
+
+<h2>Request Description</h2>
+<p>{{ request.req_details }}</p>
+
+<h2>Status</h2>
+<p><strong>{{ request.status }}</strong></p>
+
+<form action="{{ url_for('app.update_request', req_id=request.req_id) }}" method="POST">
+    <button type="submit" name="action" value="close">Close Request</button>
+</form>
+
+{% endblock %}

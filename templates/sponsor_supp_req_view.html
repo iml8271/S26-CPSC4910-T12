@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Sponsor - Support Dashboard</title>
+<style>
+    table { width: 100%;}
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    .status-open { color: green; font-weight: bold; }
+    .status-other { color: gray; }
+</style>
+{% endblock %}
+
+{% block body %}
+<h1>All Support Requests</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Org ID</th>
+            <th>Type</th>
+            <th>Details</th>
+            <th>Submitted</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in requests %}
+        <tr>
+            <td>{{ request.req_id }}</td>
+            <td>{{ request.source_org }}</td>
+            <td>{{ request.req_type }}</td>
+            <td>{{ request.req_details}}</td>
+            <td>{{ request.creation_date}}</td>
+            <td>{{ request.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+<form action="{{ url_for('app.sponsor_view_requests_open') }}" method="GET">
+    <button type="submit">View Open Requests Only</button>
+</form>
+<br>
+
+{% endblock %}

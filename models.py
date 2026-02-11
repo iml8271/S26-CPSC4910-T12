@@ -1,3 +1,5 @@
+from email.policy import default
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy import select,desc
@@ -155,5 +157,5 @@ class SupportRequest(db.Model):
     #info about the request
     req_type = db.Column(db.String(100), nullable = False)
     req_details = db.Column(db.String(10000), nullable = False)
-    creation_date = db.Column(db.DateTime, nullable = False)
+    creation_date = db.Column(db.DateTime, nullable = False, default=datetime.now)
     status = db.Column(db.String(20), nullable=False, default="Open")
