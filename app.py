@@ -4,8 +4,9 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash,check_password_hash
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile,SponsorProfile
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory
 from datetime import datetime
+from flask_migrate import Migrate
 
 
 # Initialize Flask app
@@ -16,6 +17,7 @@ app.config["SECRET_KEY"] = "giggle-gang"
 
 #Bind db
 db.init_app(app)
+migrate = Migrate(app,db)
 
 # Initialize login manager
 login_manager = LoginManager()
@@ -38,7 +40,7 @@ def load_user(user_id):
 @login_required
 def handle_logout():
     logout_user()
-    return render_template("login.html")   
+    return render_template("auth/login.html")   
 
 # Protected dashboard Route
 @app.route("/dashboard")
@@ -64,7 +66,7 @@ def role_required(*roles):
 @app.route("/settings/sponsor")
 @role_required("sponsor")
 def sponsor_settings():
-    return render_template("sponsor_settings.html", username=current_user.username)
+    return render_template("sponsor/sponsor_settings.html", username=current_user.username)
 
 @app.route("/sponsor/driver_list", methods=["GET","POST"])
 @role_required("sponsor")
@@ -73,7 +75,58 @@ def sponsor_view_drivers():
     if not sponsor:
         return redirect(url_for("view_sponsor_dashboard"))
     drivers = DriverProfile.query.filter_by(company_id=sponsor.company_id).all()
-    return render_template("sponsor_view_drivers.html",drivers=drivers)
+    return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
+
+@app.route("/sponsor/adjust_points", methods=["POST"])
+@role_required("sponsor")
+def adjust_points():
+    driver_id_raw = request.form.get("driver_id")
+    try:
+        driver_id = int(driver_id_raw.strip())
+    except (TypeError, ValueError):
+        flash("Invalid driver ID.")
+        return redirect(url_for("sponsor_view_drivers"))
+    print(f"Updated Driver ID:{driver_id}")
+    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    if not sponsor:
+        flash("Sponsor profile not found.")
+        return redirect(url_for("sponsor_view_drivers"))
+
+    driver = DriverProfile.query.filter_by(
+        user_id=driver_id,
+        company_id=sponsor.company_id
+    ).first()
+
+    
+    if not driver:
+        flash("Error: Driver not found.")
+        return redirect(url_for("sponsor_view_drivers"))
+    points_change = int(request.form.get("points_change"))
+    reason = request.form.get("reason")
+    
+    # Calculate new total points
+    new_total = driver.points + points_change
+    
+    # Save New total points
+    new_log = DriverPointsHistory(
+        user_id=driver.user_id,
+        points_change=points_change,
+        current_points=new_total,
+        reason=reason,
+        sponsor_user_id=sponsor.user_id,
+    )
+    try:
+        db.session.add(new_log)
+        print("NEW LOG:", new_log.user_id, new_log.points_change, new_log.current_points)
+        db.session.commit()
+        db.session.refresh(driver)
+        flash(f"Successfully adjusted points for {driver.firstname}!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"DATABASE ERROR: {e}")
+        flash("An error occurred while saving to the database.")
+    
+    return redirect(url_for("sponsor/sponsor_view_drivers"))
 
 # ------- Driver Spefici ------------------
 
@@ -88,14 +141,14 @@ def view_admin_dashboard():
 @role_required("sponsor")
 def view_sponsor_dashboard():
     sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    return render_template("sponsor_dashboard.html", username=current_user.username,firstname=sponsor_profile.firstname)
+    return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=sponsor_profile.firstname)
 
 @app.route("/driver/dashboard")
 @role_required("driver")
 def view_driver_dashboard():
     profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
     points = profile.points if profile else 0
-    return render_template("driver_dashboard.html", username=current_user.username,points=points)
+    return render_template("driver/driver_dashboard.html", username=current_user.username,points=points)
 
 #------------ Universal Routes--------------
 # Home Route
@@ -127,12 +180,12 @@ def driver_catalog():
         {"name": "CV Radio", "price": 1500},
         {"name": "$50 Taco Bell Gift Card", "price": 3000},
     ]
-    return render_template("driver_catalog.html", items=items)
+    return render_template("driver/driver_catalog.html", items=items)
 
 @app.route("/driver/dashboard/driver_faq")
 @login_required
 def driver_faq():
-    return render_template("driver_faq.html")
+    return render_template("driver/driver_faq.html")
 
 @app.route("/driver/dashboard/driver_points_review")
 @login_required
@@ -143,7 +196,7 @@ def driver_points_review():
         {"date": "2024-01-20", "points": 50, "description": "50 Points Deducted for Speeding"},
         {"date": "2024-02-05", "points": 100, "description": "Max Points, No Infractions"},
     ]
-    return render_template("driver_points_review.html",points_log=points_log)
+    return render_template("driver/driver_points_review.html",points_log=points_log)
 
 
 if __name__ == "__main__":
@@ -154,7 +207,7 @@ if __name__ == "__main__":
 @login_required
 def profile():
     # current_user already holds the data from the DB
-    return render_template("driver_profile.html", user=current_user)
+    return render_template("driver/driver_profile.html", user=current_user)
 
 
 @app.route("/update-email", methods=["POST"])

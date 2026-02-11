@@ -25,8 +25,8 @@ def handle_login():
             }
             return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))
         else:
-            return render_template("login.html", error="Invalid username or password")
-    return render_template("login.html") 
+            return render_template("auth/login.html", error="Invalid username or password")
+    return render_template("auth/login.html") 
 
 # Signup Route:
 # registering new users into the system, currently works for only creating new drivers
@@ -41,16 +41,16 @@ def handle_signup():
 
         # Checks if username already exists
         if Users.query.filter_by(username=username).first():
-            return render_template("signup.html",error="Username already taken!")
+            return render_template("auth/signup.html",error="Username already taken!")
         
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
         if not password:
-            return render_template("signup.html", error="Password required")
+            return render_template("auth/signup.html", error="Password required")
 
         if not get_password_strength(password):
-            return render_template("signup.html", error="Password does not meet minimums")
+            return render_template("auth/signup.html", error="Password does not meet minimums")
         
         #Email Checker
         #tba
@@ -61,7 +61,7 @@ def handle_signup():
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for("auth.handle_login"))
-    return render_template("signup.html")
+    return render_template("auth/signup.html")
 
 # Signup Driver
 @auth_bp.route('/signup_driver', methods=["GET","POST"])
@@ -90,33 +90,33 @@ def handle_driver_signup():
 
         # Checks if username already exists
         if Users.query.filter_by(username=username).first():
-            return render_template("driver_signup.html",error="Username already taken!")
+            return render_template("driver/driver_signup.html",error="Username already taken!")
         
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
         if not password:
-            return render_template("signup.html", error="Password required")
+            return render_template("auth/signup.html", error="Password required")
 
         if not get_password_strength(password):
-            return render_template("signup.html", error="Password does not meet minimums")
+            return render_template("auth/signup.html", error="Password does not meet minimums")
         
         hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
         
         #Email Checker
         #tba
         if Users.query.filter_by(email=email).first():
-            return render_template("driver_signup.html", error="Email already registered")
+            return render_template("driver/driver_signup.html", error="Email already registered")
 
         #Sponsor Link
         company_id = request.form.get("company_id")
         if not company_id:
-            return render_template("driver_signup.html", error="Invalid sponsor company selected")
+            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
 
         company_id = int(company_id)
 
         if not company_id:
-            return render_template("driver_signup.html", error="Invalid sponsor company selected")
+            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
 
         new_user = Users(username=username,
             password=hashed_password,
@@ -134,7 +134,7 @@ def handle_driver_signup():
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for("auth.handle_login"))
-    return render_template("driver_signup.html",companies=companies)
+    return render_template("driver/driver_signup.html",companies=companies)
 
 # Signup - Sponsor
 @auth_bp.route('/signup_sponsor', methods=["GET","POST"])
@@ -157,28 +157,28 @@ def handle_sponsor_signup():
 
         # Checks if username already exists
         if Users.query.filter_by(username=username).first():
-            return render_template("driver_signup.html",error="Username already taken!")
+            return render_template("driver/driver_signup.html",error="Username already taken!")
         
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
         if not password:
-            return render_template("signup.html", error="Password required")
+            return render_template("auth/signup.html", error="Password required")
 
         if not get_password_strength(password):
-            return render_template("signup.html", error="Password does not meet minimums")
+            return render_template("auth/signup.html", error="Password does not meet minimums")
         
         hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
         
         #Email Checker
         #tba
         if Users.query.filter_by(email=email).first():
-            return render_template("driver_signup.html", error="Email already registered")
+            return render_template("driver/driver_signup.html", error="Email already registered")
 
         # Company
         company_id = request.form.get("company_id")
         if not company_id:
-            return render_template("driver_signup.html", error="Invalid sponsor company selected")
+            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
         company_id = int(company_id)
 
         # Commit
@@ -197,7 +197,7 @@ def handle_sponsor_signup():
         db.session.commit()
 
         return redirect(url_for("auth.handle_login"))
-    return render_template("sponsor_signup.html",companies=companies)
+    return render_template("sponsor/sponsor_signup.html",companies=companies)
 
 
 
@@ -211,23 +211,23 @@ def handle_forgot_password():
 
         user = Users.query.filter_by(username=username).first()
         if not user:
-            return render_template("signup.html",error="Username not found!")
+            return render_template("auth/signup.html",error="Username not found!")
 
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
         if not password:
-            return render_template("forgotpassword.html", error="Password required")
+            return render_template("auht/forgotpassword.html", error="Password required")
 
         if not get_password_strength(password):
-            return render_template("forgotpassword.html", error="Password does not meet minimums")
+            return render_template("auht/forgotpassword.html", error="Password does not meet minimums")
         
         if user:
             user.password = generate_password_hash(password,method="pbkdf2:sha256")
             db.session.commit()
 
         return redirect(url_for("auth.handle_login"))
-    return render_template("forgotpassword.html")
+    return render_template("auth/forgotpassword.html")
 
 # Password Strength Calculator
 def get_password_strength(password):

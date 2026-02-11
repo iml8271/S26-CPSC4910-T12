@@ -70,10 +70,13 @@ class DriverProfile(db.Model):
     #points
     driver_points_history = db.relationship("DriverPointsHistory"
                             ,back_populates="driver_profile"
-                            ,order_by="DriverPointsHistory.update_date.desc()")
+                            ,order_by="desc(DriverPointsHistory.update_date)"
+                            ,lazy="joined")
     @hybrid_property
     def points(self):
-        return self.driver_points_history[0].points_total if self.driver_points_history else 0
+        if self.driver_points_history:
+            return self.driver_points_history[0].current_points 
+        return 0
     
 class DriverApplications(db.Model):
     __tablename__ = "driver_applications"
@@ -103,7 +106,7 @@ class DriverPointsHistory(db.Model):
 
     # Points History
     points_change = db.Column(db.Integer,nullable=False,server_default="0")
-    points_total = db.Column(db.Integer,nullable=False,server_default="0")
+    current_points = db.Column(db.Integer,nullable=False,server_default="0")
     update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
     reason = db.Column(db.String(250), nullable=False)
 
@@ -140,7 +143,6 @@ class SponsorCompany(db.Model):
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     drivers = db.relationship("DriverProfile",back_populates="company")
 
-<<<<<<< Updated upstream
 
 ## SUPPORT -----
 class SupportRequest(db.Model):
@@ -155,5 +157,3 @@ class SupportRequest(db.Model):
     req_details = db.Column(db.String(10000), nullable = False)
     creation_date = db.Column(db.DateTime, nullable = False)
     status = db.Column(db.String(20), nullable=False, default="Open")
-=======
->>>>>>> Stashed changes
