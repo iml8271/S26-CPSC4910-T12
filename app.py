@@ -264,6 +264,17 @@ def driver_catalog():
     ]
     return render_template("driver/driver_catalog.html", items=items)
 
+@app.route("/driver/dashboard/driver_order_history")
+@login_required
+def driver_order_history():
+    #we can remove these after we update database
+    items = [
+        {"name": "Jar Of Dirt", "price": 1, "date": "02/09/26"},
+        {"name": "CV Radio", "price": 1500, "date": "06/21/87"},
+        {"name": "$50 Taco Bell Gift Card", "price": 3000, "date": "09/01/20"},
+    ]
+    return render_template("driver/driver_order_history.html", items=items)
+
 @app.route("/driver/dashboard/driver_faq")
 @login_required
 def driver_faq():

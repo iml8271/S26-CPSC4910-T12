@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Driver Order History</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+
+    <h1>Order History</h1>
+    <p>Here is a review of your past orders:</p>
+
+    <label for="sortingOption">Sort By</label>
+    <select id="sortingOption" onchange="sortOrders()">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="most-points">Most Points</option>
+        <option value="least-points">Least Points</option>
+    </select>
+
+
+
+    <div class="orderedHistory">
+        {% for entry in order_log %}
+            <div class="orderedItem"
+                    data-name="{{ entry.name }}"
+                    data-price="{{ entry.points }}"
+                    data-date="{{ entry.date }}">
+
+                <p>Item: {{ entry.name }}</p>
+                <p>Price: {{ entry.points}}</p>
+                <p>Date: {{ entry.date }}</p>
+                <button>Return Item?</button>
+            </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+<script type="text/javascript">
+function sortOrders(){
+    const sortingOption = document.getElementById('sortOption').value;
+    const orderedHistory = document.getElementById('orderList');
+    const entries = Array.from(orderedHistory.getElementsByClassName('order-entry'));
+
+    entries.sort((a, b) => {
+    switch(sortOption) {
+      case 'newest':
+        return new Date(b.dataset.date) - new Date(a.dataset.date);
+      case 'oldest':
+        return new Date(a.dataset.date) - new Date(b.dataset.date);
+      case 'most-points':
+        return parseInt(b.dataset.points) - parseInt(a.dataset.points);
+      case 'least-points':
+        return parseInt(a.dataset.points) - parseInt(b.dataset.points);
+      case 'name-az':
+        return a.dataset.name.localeCompare(b.dataset.name);
+      case 'name-za':
+        return b.dataset.name.localeCompare(a.dataset.name);
+    });
+
+    entries.forEach(entry => orderList.appendChild(entry));
+}
+
+</script>
+{% endblock %}
