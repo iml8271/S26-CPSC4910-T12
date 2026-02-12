@@ -7,8 +7,19 @@
 {% block body %}
 <div class="center-body-div">
     <h1>Settings - Driver</h1>
-    <form>
-    <br><br>
+    <form id="driver-settings-address" method="POST"
+        action="{{ url_for('driver_settings') }}">
+    <h5>Personal Info.</h5>
+        <label for="streetname">Address:</label>
+        <input id="streetname"
+            type="text" name="streetname" placeholder="Street Name"
+            value="{{ driver.streetname }}"><br>
+        <input id="city"
+            type="text" name="city" placeholder="City"
+            value="{{ driver.city }}"><br>
+        <input id="zipcode"
+            type="text" name="zipcode" placeholder="Zipcode"
+            value="{{ driver.zipcode }}"><br>
     <button type="submit">Update</button>
     </form>
     <br><br>

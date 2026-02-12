@@ -2,11 +2,13 @@ from flask import Flask, render_template, request, redirect, url_for, session,ab
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
+from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory, SupportRequest
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany
 from datetime import datetime
 from flask_migrate import Migrate
+import os
 
 
 # Initialize Flask app
@@ -34,13 +36,19 @@ with app.app_context():
 def load_user(user_id):
     return db.session.get(Users, int(user_id))
 
+# LOGO UPLOAD
+UPLOAD_FOLDER = os.path.join(app.static_folder, "images/uploads/logos")
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+
 
 # Logout Route
 @app.route("/logout")
 @login_required
 def handle_logout():
     logout_user()
-    return render_template("auth/login.html")   
+    return render_template("login.html")   
 
 # Protected dashboard Route
 @app.route("/dashboard")
@@ -61,12 +69,56 @@ def role_required(*roles):
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
+# ----- Admin Soeficifc --------------------
+@app.route("/admin/sponsor_list", methods=["GET","POST"])
+@role_required("admin")
+def admin_sponsor_list():
+    sponsors = SponsorProfile.query.all()
+    return render_template("admin/admin_sponsor_list.html",sponsors=sponsors)
 
 # ----- Sponsor Speficic--------------------
-@app.route("/settings/sponsor")
+@app.route("/sponsor/settings",methods=["GET","POST"])
 @role_required("sponsor")
 def sponsor_settings():
-    return render_template("sponsor/sponsor_settings.html", username=current_user.username)
+    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    if request.method == "POST":
+        if "sponsor_logo" not in request.files:
+            flash("No file selected.")
+            return redirect(url_for("sponsor_settings"))
+
+        file = request.files["sponsor_logo"]
+
+        if file.filename == "":
+            flash("No file selected.")
+            return redirect(url_for("sponsor_settings"))
+
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+
+            # Optional: make filename unique
+            unique_filename = f"{sponsor.company_id}_{filename}"
+
+            save_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
+            file.save(save_path)
+
+            # Store relative path in DB
+            sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
+            db.session.commit()
+
+            flash("Logo uploaded successfully.")
+            return redirect(url_for("sponsor_settings"))
+        else:
+            flash("Invalid file type. Only PNG and JPG allowed.")
+            return redirect(url_for("sponsor_settings"))
+
+    return render_template(
+        "sponsor/sponsor_settings.html",
+        sponsor=sponsor)
+
+def allowed_file(filename):
+    return "." in filename and \
+        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route("/sponsor/driver_list", methods=["GET","POST"])
 @role_required("sponsor")
@@ -85,12 +137,12 @@ def adjust_points():
         driver_id = int(driver_id_raw.strip())
     except (TypeError, ValueError):
         flash("Invalid driver ID.")
-        return redirect(url_for("sponsor_view_drivers"))
+        return redirect(url_for("sponsor/sponsor_view_drivers"))
     print(f"Updated Driver ID:{driver_id}")
     sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
     if not sponsor:
         flash("Sponsor profile not found.")
-        return redirect(url_for("sponsor_view_drivers"))
+        return redirect(url_for("sponsor/sponsor_view_drivers"))
 
     driver = DriverProfile.query.filter_by(
         user_id=driver_id,
@@ -129,7 +181,37 @@ def adjust_points():
     return redirect(url_for("sponsor/sponsor_view_drivers"))
 
 # ------- Driver Spefici ------------------
+@app.route("/driver/settings", methods=["GET","POST"])
+@role_required("driver")
+def driver_settings():
+    driver = DriverProfile.query.filter_by(user_id=current_user.id).first()
+    if request.method=="POST":
+        #Address Checker
+        streetname = request.form.get("streetname")
+        city = request.form.get("city")
+        zipcode = request.form.get("zipcode")
+        #tba
 
+        if not streetname or not city or not zipcode:
+            flash("All address fields are required.")
+            return redirect(url_for("driver_settings"))
+        
+        if (driver.streetname == streetname and
+            driver.city == city and
+            driver.zipcode == zipcode):
+            
+            flash("No changes detected.")
+            return redirect(url_for("driver_settings"))
+
+        # Only update changed fields
+        driver.streetname = streetname
+        driver.city = city
+        driver.zipcode = zipcode
+
+        db.session.commit()
+        flash("Address updated successfully.")
+        return redirect(url_for("driver_settings"))
+    return render_template("driver/driver_settings.html", driver=driver,username=current_user.username)
 
 # ------------ Protected dashboard Route --------------
 @app.route("/admin/dashboard")
@@ -241,60 +323,5 @@ def add_shipping_info():
                           city = city_name, state = state, zipcode = zip_code, country = country, nickname = nickname,
                           email = email)
     db.session.add(new_address)
-    db.session.commit()
-
-@app.route('/submit-support', methods=['POST'])
-@login_required
-def handle_support():
-    sourceID = current_user.id
-    sourceORG = current_user.company_ID
-    rType = request.form.get("request_type")
-    details = request.form.get("details")
-
-    new_req = SupportRequest(source_id = sourceID, source_org = sourceORG, req_type = rType, req_details = details)
-
-    db.session.add(new_req)
-    db.session.commit()
-
-
-@app.route('/admin/requests', methods=['GET'])
-@login_required
-def admin_view_requests():
-    all_requests = SupportRequest.query.order_by(SupportRequest.creation_date.desc()).all()
-
-    return render_template('admin_supp_req_view.html', requests=all_requests)
-
-@app.route('/sponsor/requests', methods=['GET'])
-@login_required
-def sponsor_view_requests():
-    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id).order_by(SupportRequest.creation_date.desc())
-
-    return render_template('support_supp_req_view.html', requests=all_requests)
-
-@app.route('/admin/requests/open', methods=['GET'])
-@login_required
-def admin_view_requests_open():
-    all_requests = SupportRequest.query.filter_by(status='Open').order_by(SupportRequest.creation_date.desc())
-
-    return render_template('admin_supp_req_view.html', requests=all_requests)
-
-@app.route('/sponsor/requests/open', methods=['GET'])
-@login_required
-def sponsor_view_requests_open():
-    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id, status='Open')\
-                                                    .order_by(SupportRequest.creation_date.desc())
-
-    return render_template('support_supp_req_view.html', requests=all_requests)
-
-@app.route('/requests/close', methods=['POST'])
-@login_required
-def close_request():
-    req_id = request.form.get("request_id")
-    support_req = SupportRequest.query.get(req_id)
-    support_req.status = 'Closed'
-    db.session.commit()
-
-
-
 
 

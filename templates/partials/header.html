@@ -18,6 +18,9 @@
                         <li class="nav-item">
                             <a href="{{ url_for('driver_points_review') }}">Points Review</a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('driver_settings') }}">Settings</a>
+                        </li>
                     {% elif current_user.role == 'sponsor' %}
                         <li class="nav-item">
                             <a href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>

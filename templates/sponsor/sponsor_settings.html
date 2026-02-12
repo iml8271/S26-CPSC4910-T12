@@ -7,13 +7,25 @@
 {% block body %}
 <div class="center-body-div">
     <h1>Settings - Sponsor</h1>
-    <form>
-            <label for="sponsor-logo">Choose a Sponsor Logo:</label>
+<form method="POST" action="{{ url_for('sponsor_settings') }}" enctype="multipart/form-data">
+    <label for="sponsor-logo">Choose a Sponsor Logo:</label>
     <br>
-    <input type="file" id="sponsor-logo" name="sponsor-logo" accept="image/png, image/jpeg" />
+    <input 
+        type="file" 
+        id="sponsor-logo" 
+        name="sponsor_logo" 
+        accept="image/png, image/jpeg"
+        required
+    >
     <br><br>
     <button type="submit">Update</button>
-    </form>
+</form>
     <br><br>
+    {% if sponsor.company.logo_filename %}
+    <img 
+        src="{{ url_for('static', filename=sponsor.company.logo_filename) }}" 
+        style="max-width:200px; margin-top:20px;"
+    >
+{% endif %}
 </div>
 {% endblock %}
