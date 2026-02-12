@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
 from datetime import datetime
 from flask_migrate import Migrate
 import os
@@ -292,9 +292,6 @@ def driver_points_review():
     return render_template("driver/driver_points_review.html",points_log=points_log)
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 
 @app.route("/driver_profile")
 @login_required
@@ -335,4 +332,68 @@ def add_shipping_info():
                           email = email)
     db.session.add(new_address)
 
+
+@app.route('/submitted', methods=['POST'])
+@login_required
+def submit_req():
+    sourceID = current_user.id
+    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
+    sourceORG = profile.company_id
+    rType = request.form.get("request_type")
+    details = request.form.get("details")
+
+    new_req = SupportRequest(source_id = sourceID, source_org = sourceORG, req_type = rType, req_details = details)
+
+    db.session.add(new_req)
+    db.session.commit()
+    return redirect(url_for('view_driver_dashboard'))
+
+
+@app.route('/admin/requests', methods=['GET'])
+@login_required
+def admin_view_requests():
+    all_requests = SupportRequest.query.order_by(SupportRequest.creation_date.desc()).all()
+
+    return render_template('admin_supp_req_view.html', requests=all_requests)
+
+@app.route('/sponsor/requests', methods=['GET'])
+@login_required
+def sponsor_view_requests():
+    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id).order_by(SupportRequest.creation_date.desc())
+
+    return render_template('support_supp_req_view.html', requests=all_requests)
+
+@app.route('/admin/requests/open', methods=['GET'])
+@login_required
+def admin_view_requests_open():
+    all_requests = SupportRequest.query.filter_by(status='Open').order_by(SupportRequest.creation_date.desc())
+
+    return render_template('admin_supp_req_view.html', requests=all_requests)
+
+@app.route('/sponsor/requests/open', methods=['GET'])
+@login_required
+def sponsor_view_requests_open():
+    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id, status='Open')\
+                                                    .order_by(SupportRequest.creation_date.desc())
+
+    return render_template('support_supp_req_view.html', requests=all_requests)
+
+@app.route('/requests/close', methods=['POST'])
+@login_required
+def close_request():
+    req_id = request.form.get("request_id")
+    support_req = SupportRequest.query.get(req_id)
+    support_req.status = 'Closed'
+    db.session.commit()
+
+@app.route('/supportRequest')
+def support_form():
+    return render_template("support_request_submission_form.html")
+
+@app.route('/requestDetails')
+def view_req_details():
+    return render_template("request_details.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
