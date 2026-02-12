@@ -6,12 +6,18 @@
 
 {% block body %}
 <div class="center-body-div">
+{% if profile and profile.company.logo_filename %}
+    <img 
+        src="{{ url_for('static', filename=profile.company.logo_filename) }}"
+        alt="Company Logo"
+        style="max-width:200px; margin-bottom:20px;"
+    >
+{% endif %}
 <h1>Logged in as Driver!</h1>
 <p>Welcome! {{ username }}</p><br>
 <p>Your balance is {{ points }}</p>
 <p><a href="{{ url_for('driver_catalog') }}">View Catalog</a></p><br>
 <a href="{{ url_for('driver_faq') }}">Frequently Asked Questions</a><br>
 <a href="{{ url_for('driver_points_review') }}">Points Review</a><br>
-<a href="{{ url_for('auth.handle_logout') }}">Logout</a>
 </div>
 {% endblock %}

@@ -230,7 +230,7 @@ def view_sponsor_dashboard():
 def view_driver_dashboard():
     profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
     points = profile.points if profile else 0
-    return render_template("driver/driver_dashboard.html", username=current_user.username,points=points)
+    return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=profile)
 
 #------------ Universal Routes--------------
 # Home Route
