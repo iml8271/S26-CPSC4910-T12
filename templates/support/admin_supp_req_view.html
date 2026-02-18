@@ -28,7 +28,7 @@
     <tbody>
         {% for request in requests %}
         <tr>
-            <td>{{ request.req_id }}</td>
+            <td><a href="{{ url_for('support.view_req_details') }}">{{request.req_id}}</a> </td>
             <td>{{ request.source_org }}</td>
             <td>{{ request.req_type }}</td>
             <td>{{ request.req_details}}</td>

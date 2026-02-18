@@ -33,7 +33,7 @@ def submit_req():
 def admin_view_requests():
     all_requests = SupportRequest.query.order_by(SupportRequest.creation_date.desc()).all()
 
-    return render_template('admin_supp_req_view.html', requests=all_requests)
+    return render_template('support/admin_supp_req_view.html', requests=all_requests)
 
 @supp_bp.route('/sponsor/requests', methods=['GET'])
 @login_required
@@ -47,7 +47,7 @@ def sponsor_view_requests():
 def admin_view_requests_open():
     all_requests = SupportRequest.query.filter_by(status='Open').order_by(SupportRequest.creation_date.desc())
 
-    return render_template('admin_supp_req_view.html', requests=all_requests)
+    return render_template('support/admin_supp_req_view.html', requests=all_requests)
 
 @supp_bp.route('/sponsor/requests/open', methods=['GET'])
 @login_required
@@ -69,12 +69,16 @@ def close_request():
 def support_form():
     return render_template("support/support_request_submission_form.html")
 
-@supp_bp.route('/requestDetails')
+@supp_bp.route('/requestDetails', methods=['GET'])
 def view_req_details():
-    return render_template("request_details.html")
+    support_req = SupportRequest.query.get(req_id)
+    return render_template("support/request_details.html")
 
 @supp_bp.route('/admin/requestDetails', methods=['GET'])
 def admin_support_list():
     return render_template("support/admin_supp_req_view.html")
+
+
+
 
 
