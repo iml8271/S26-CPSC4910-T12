@@ -27,7 +27,7 @@
 <h2>Status</h2>
 <p><strong>{{ request.status }}</strong></p>
 
-<form action="{{ url_for('app.update_request', req_id=request.req_id) }}" method="POST">
+<form action="{{ url_for('support.close_request', request_id=request.req_id) }}" method="POST">
     <button type="submit" name="action" value="close">Close Request</button>
 </form>
 

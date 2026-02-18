@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Reports - Support Requests</title>
+
+{% endblock %}
+
+{% block body %}
+
+    <h2>Support Request Summary</h2>
+
+
+        <table class="table table-hover report-table">
+            <thead class="table-dark">
+                <tr>
+                    <th>Request Type</th>
+                    <th class="text-end">Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request_type, count in tallies.items() %}
+                <tr>
+                    <td>{{ request_type }}</td>
+                    <td class="text-end">{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+
+{% endblock %}

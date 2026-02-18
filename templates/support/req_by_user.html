@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Admin - Support Dashboard</title>
+<title>Support Dashboard</title>
 <style>
     table { width: 100%;}
     th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
@@ -39,18 +39,9 @@
     </tbody>
 </table>
 <br>
-<form action="{{ url_for('support.admin_view_requests_open') }}" method="GET">
+<form action="{{ url_for('support.user_view_requests_open') }}" method="GET">
     <button type="submit">View Open Requests Only</button>
 </form>
-<div style="margin-top: 20px; display: flex; gap: 10px;">
-    <form action="{{ url_for('support.admin_view_sponsor') }}" method="GET">
-    <label for="org">View Org Queue: </label>
-    <select name="org_id" id="org">
-        <option value="">Loading...</option>
-    </select>
-    <button type="submit">Go</button>
-</form>
-</div>
-
+<br>
 
 {% endblock %}

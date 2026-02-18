@@ -8,7 +8,8 @@
 <div class="center-body-div">
 <h1>Logged in as Sponsor {{ firstname }}!</h1>
 <a href="{{ url_for('sponsor_view_drivers') }}">My Drivers</a>
-<br>
+<br><a href="{{ url_for('support.support_form') }}">Get Help Here!</a><br>
+    <br><a href="{{ url_for('support.user_view_requests') }}">View My Support Requests!</a><br>
 
 </div>
 {% endblock %}

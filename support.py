@@ -35,19 +35,28 @@ def admin_view_requests():
 
     return render_template('support/admin_supp_req_view.html', requests=all_requests)
 
-@supp_bp.route('/sponsor/requests', methods=['GET'])
-@login_required
-def sponsor_view_requests():
-    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id).order_by(SupportRequest.creation_date.desc())
-
-    return render_template('support_supp_req_view.html', requests=all_requests)
-
 @supp_bp.route('/admin/requests/open', methods=['GET'])
 @login_required
 def admin_view_requests_open():
     all_requests = SupportRequest.query.filter_by(status='Open').order_by(SupportRequest.creation_date.desc())
 
     return render_template('support/admin_supp_req_view.html', requests=all_requests)
+
+@supp_bp.route('/admin/requests/sponsor', methods=['GET'])
+@login_required
+def admin_view_sponsor():
+    org_id = request.args.get('org_id')
+    all_requests = SupportRequest.query.filter_by(source_org=org_id, status='Open') \
+        .order_by(SupportRequest.creation_date.desc())
+
+    return render_template('admin_supp_req_view.html', requests=all_requests)
+
+@supp_bp.route('/sponsor/requests', methods=['GET'])
+@login_required
+def sponsor_view_requests():
+    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id).order_by(SupportRequest.creation_date.desc())
+
+    return render_template('support_supp_req_view.html', requests=all_requests)
 
 @supp_bp.route('/sponsor/requests/open', methods=['GET'])
 @login_required
@@ -57,26 +66,50 @@ def sponsor_view_requests_open():
 
     return render_template('support_supp_req_view.html', requests=all_requests)
 
-@supp_bp.route('/requests/close', methods=['POST'])
+
+
+@supp_bp.route('/requests/close/<int:request_id>', methods=['POST'])
 @login_required
-def close_request():
-    req_id = request.form.get("request_id")
-    support_req = SupportRequest.query.get(req_id)
+def close_request(request_id):
+    support_req = SupportRequest.query.get(request_id)
     support_req.status = 'Closed'
     db.session.commit()
+    return redirect(url_for('support.admin_view_requests'))
 
 @supp_bp.route('/supportRequest')
 def support_form():
     return render_template("support/support_request_submission_form.html")
 
-@supp_bp.route('/requestDetails', methods=['GET'])
-def view_req_details():
+@supp_bp.route('/requestDetails/<int:req_id>', methods=['GET'])
+def view_req_details(req_id):
     support_req = SupportRequest.query.get(req_id)
-    return render_template("support/request_details.html")
+    return render_template("support/request_details.html", request=support_req)
 
 @supp_bp.route('/admin/requestDetails', methods=['GET'])
 def admin_support_list():
     return render_template("support/admin_supp_req_view.html")
+
+@supp_bp.route('/user/requests', methods=['GET'])
+@login_required
+def user_view_requests():
+    all_requests = SupportRequest.query.filter_by(source_id=current_user.id)\
+                                                    .order_by(SupportRequest.creation_date.desc())
+
+    return render_template('support/req_by_user.html', requests=all_requests)
+
+@supp_bp.route('/user/requests/open', methods=['GET'])
+@login_required
+def user_view_requests_open():
+    all_requests = SupportRequest.query.filter_by(source_id=current_user.id, status='Open')\
+                                                    .order_by(SupportRequest.creation_date.desc())
+
+    return render_template('support/req_by_user.html', requests=all_requests)
+
+@supp_bp.route('/orgs', methods=['GET'])
+@login_required
+def get_orgs():
+    sponsors = SponsorCompany.query.all()
+    return sponsors
 
 
 

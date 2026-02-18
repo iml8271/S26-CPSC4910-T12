@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
 from support import supp_bp
+from reports import report_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
 from datetime import datetime
 from flask_migrate import Migrate
@@ -29,6 +30,7 @@ login_manager.login_view = "auth.handle_login"
 # Register auth blueprint
 app.register_blueprint(auth_bp)
 app.register_blueprint(supp_bp)
+app.register_blueprint(report_bp)
 # Create database
 with app.app_context():
     db.create_all()    
