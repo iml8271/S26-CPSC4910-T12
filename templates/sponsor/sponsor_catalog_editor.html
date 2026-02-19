@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Catalog Editor</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+<h1>Logged in as Sponsor {{ firstname }}!</h1>
+
+<br>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+  {% for message in messages %}
+    <p><strong>{{ message }}</strong></p>
+  {% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Add New Item -->
+<h2>Add New Item</h2>
+<form method="POST" action="{{ url_for('sponsor_catalog_add') }}">
+  <input type="text" name="name" placeholder="Item Name" required>
+  <input type="text" name="description" placeholder="Description">
+  <input type="number" name="price" placeholder="Point Cost" min="0" required>
+  <button type="submit">Add Item</button>
+</form>
+
+<!-- Catalog Table -->
+<h2>Current Catalog</h2>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Price (pts)</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <form method="POST" action="{{ url_for('sponsor_catalog_edit', item_index=loop.index0) }}">
+        <td><input type="text" name="name" value="{{ item.name }}"></td>
+        <td><input type="text" name="description" value="{{ item.description or '' }}"></td>
+        <td><input type="number" name="price" value="{{ item.price }}" min="0"></td>
+        <td>
+          <button type="submit">Save</button>
+          <button type="submit" form="delete-{{ loop.index0 }}">Delete</button>
+        </td>
+      </form>
+    </tr>
+    <form id="delete-{{ loop.index0 }}" method="POST" action="{{ url_for('sponsor_catalog_delete', item_index=loop.index0) }}" onsubmit="return confirm('Delete this item?')"></form>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if not items %}
+  <p>No items in the catalog yet.</p>
+{% endif %}
+
+</div>
+{% endblock %}

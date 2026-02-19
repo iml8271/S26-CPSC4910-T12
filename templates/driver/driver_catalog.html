@@ -7,16 +7,101 @@
 {% block body %}
 <div class="center-body-div">
 
-<p>Here's your Catalog {{ username }}</p><br>
-<p>Your current balance is {{ points }}</p>
-<div class="catalog">
-    {% for item in items: %}
-        <div class="catalog-item">
-            <h3>{{ item.name }}</h3>
-            <p>Cost: {{ item.price }} points</p>
-            <button>Purchase Now</button>
-            <button>Add to cart</button>
-        </div>
+  <p>Here's your Catalog {{ username }}</p><br>
+  <p>Your current balance: {{ points }} points</p>
+  <p>Cart: <span id="cart-count">0</span> items</p>
+
+  <div class="catalog">
+    {% for item in items %}
+      <div class="catalog-item">
+        <h3>{{ item.name }}</h3>
+        <p>Cost: {{ item.price }} points</p>
+        <button onclick="purchaseNow('{{ item.name }}', {{ item.price }})">Purchase Now</button>
+        <button onclick="addToCart('{{ item.name }}', {{ item.price }})">Add to Cart</button>
+      </div>
     {% endfor %}
+  </div>
+
+  <div>
+    <h3>Your Cart</h3>
+    <ul id="cart-items"></ul>
+    <p>Cart Total: <span id="cart-total">0</span> points</p>
+    <button onclick="checkoutCart()">Checkout</button>
+    <button onclick="clearCart()">Clear Cart</button>
+  </div>
+
 </div>
+
+<script type="text/javascript">
+  let cart = [];
+  const userPoints = {{ points | default(0) }};;
+
+  function addToCart(name, price) {
+    const inCart = cart.find(item => item.name === name);
+    if (inCart) {
+      inCart.qty++;
+    } else {
+      cart.push({ name, price, qty: 1 });
+    }
+    initCart();
+  }
+
+  function purchaseNow(name, price) {
+    if (price > userPoints) {
+      alert(`Not enough points to purchase ${name}.`);
+      return;
+    }
+    alert(`Purchased ${name} for ${price} points!`);
+  }
+
+  function initCart() {
+    const list = document.getElementById('cart-items');
+    const totalEl = document.getElementById('cart-total');
+    const countEl = document.getElementById('cart-count');
+
+    list.innerHTML = '';
+    let total = 0;
+    let count = 0;
+
+    cart.forEach(item => {
+      total += item.price * item.qty;
+      count += item.qty;
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span>${item.name} x${item.qty} — ${item.price * item.qty} points</span>
+        <button onclick="removeFromCart('${item.name}')">Remove</button>
+      `;
+      list.appendChild(li);
+    });
+
+    totalEl.textContent = total;
+    countEl.textContent = count;
+  }
+
+  function removeFromCart(name) {
+    cart = cart.filter(item => item.name !== name);
+    initCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    initCart();
+  }
+
+  function checkoutCart() {
+    if (cart.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    if (total > userPoints) {
+      alert('Not enough points to complete this purchase!');
+      return;
+    }
+    alert(`Checkout successful! Spent ${total} points.`);
+    clearCart();
+  }
+</script>
+
 {% endblock %}

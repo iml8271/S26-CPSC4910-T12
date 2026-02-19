@@ -184,7 +184,49 @@ def adjust_points():
     
     return redirect(url_for("sponsor/sponsor_view_drivers"))
 
-# ------- Driver Spefici ------------------
+# Hardcoded catalog
+catalog_items = [
+    {"name": "Jar Of Dirt", "description": "A mysterious jar of dirt", "price": 1},
+    {"name": "CB Radio", "description": "Stay connected on the road", "price": 1500},
+    {"name": "$50 Taco Bell Gift Card", "description": "Redeemable at any location", "price": 3000},
+]
+@app.route("/sponsor/sponsor_catalog_editor")
+@role_required("sponsor")
+def sponsor_catalog_editor():
+    return render_template("sponsor/sponsor_catalog_editor.html", items=catalog_items)
+
+@app.route("/sponsor/sponsor_catalog_editor/add", methods=["POST"])
+@role_required("sponsor")
+def sponsor_catalog_add():
+    catalog_items.append({
+        "name": request.form.get("name"),
+        "description": request.form.get("description"),
+        "price": int(request.form.get("price"))
+    })
+    flash("item added successfully")
+    return redirect(url_for("sponsor_catalog_editor"))
+
+@app.route("/sponsor/sponsor_catalog_editor/edit/<int:item_index>", methods=["POST"])
+@role_required("sponsor")
+def sponsor_catalog_edit(item_index):
+    if 0 <= item_index < len(catalog_items):
+        catalog_items[item_index] = {
+            "name": request.form.get("name"),
+            "description": request.form.get("description"),
+            "price": int(request.form.get("price"))
+        }
+        flash("Item updated sucessfuly")
+    return redirect(url_for("sponsor_catalog_editor"))
+
+@app.route("/sponsor/sponsor_catalog_editor/delete/<int:item_index>", methods=["POST"])
+@role_required("sponsor")
+def sponsor_catalog_delete(item_index):
+    if 0 <= item_index < len(catalog_items):
+        catalog_items.pop(item_index)
+        flash("Item deleted successfully yay!")
+    return redirect(url_for("sponsor_catalog_editor"))
+
+# ------- Driver Speficics ------------------
 @app.route("/driver/settings", methods=["GET","POST"])
 @role_required("driver")
 def driver_settings():
