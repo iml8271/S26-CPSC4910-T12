@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Dashboard</title>
+<title>Sponsor-Drivers List</title>
 {% endblock %}
 
 {% block body %}
 <div class="center-body-div">
 <h1>My Drivers</h1>
+<a href="{{ url_for('sponsor.sponsor_add_drivers') }}" class="btn btn-primary">
+    Add New Driver
+</a>
+<br><br>
 {% for driver in drivers %}
     <div class="driver-card">
         <h3>{{ driver.firstname }} {{ driver.lastname }}</h3>

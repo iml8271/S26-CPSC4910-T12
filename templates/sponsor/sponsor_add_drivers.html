@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Sponsor-Add Drivers</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+    <h1>My Drivers - Add Drivers</h1>
+    <p>Upload a pipe-delimited (.txt or .csv) file with format:</p>
+    <form method="POST" action="{{ url_for('sponsor_settings') }}" enctype="multipart/form-data">
+        <label for="sponsor-upload-drivers">Upload File:</label>
+    <br>
+    <input 
+        type="file" 
+        name="bulk_upload_file"
+        id="sponsor-upload-drivers"  
+        accept=".txt,.csv"
+        required
+    >
+    <br><br>
+    <button type="submit">Upload</button>
+    </form>
+</div>
+{% endblock %}

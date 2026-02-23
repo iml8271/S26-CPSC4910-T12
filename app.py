@@ -7,6 +7,7 @@ from functools import wraps
 from authentication import auth_bp
 from support import supp_bp
 from reports import report_bp
+from sponsor import sponsor_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
 from datetime import datetime
 from flask_migrate import Migrate
@@ -31,6 +32,7 @@ login_manager.login_view = "auth.handle_login"
 app.register_blueprint(auth_bp)
 app.register_blueprint(supp_bp)
 app.register_blueprint(report_bp)
+app.register_blueprint(sponsor_bp)
 # Create database
 with app.app_context():
     db.create_all()    
@@ -141,12 +143,12 @@ def adjust_points():
         driver_id = int(driver_id_raw.strip())
     except (TypeError, ValueError):
         flash("Invalid driver ID.")
-        return redirect(url_for("sponsor/sponsor_view_drivers"))
+        return redirect(url_for("ponsor_view_drivers"))
     print(f"Updated Driver ID:{driver_id}")
     sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
     if not sponsor:
         flash("Sponsor profile not found.")
-        return redirect(url_for("sponsor/sponsor_view_drivers"))
+        return redirect(url_for("sponsor_view_drivers"))
 
     driver = DriverProfile.query.filter_by(
         user_id=driver_id,
@@ -182,7 +184,7 @@ def adjust_points():
         print(f"DATABASE ERROR: {e}")
         flash("An error occurred while saving to the database.")
     
-    return redirect(url_for("sponsor/sponsor_view_drivers"))
+    return redirect(url_for("sponsor_view_drivers"))
 
 # Hardcoded catalog
 catalog_items = [
