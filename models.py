@@ -145,6 +145,17 @@ class SponsorCompany(db.Model):
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     drivers = db.relationship("DriverProfile",back_populates="company")
 
+class SponsorCompanyRules(db.Model):
+    __tablename__ = "Sponsor_Org_Rules"
+    #company and tracking info
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.FpreignKey(SponsorCompany.id), nullable = False)
+    #rule info
+    #whether the rule describes a good or bad driving behavior
+    nature = db.Column(db.String(10), nullable = False)
+    #the rule itself
+    rule = db.column(db.string(255), nullable = False)
+
 
 ## SUPPORT -----
 class SupportRequest(db.Model):
