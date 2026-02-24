@@ -94,11 +94,11 @@ def sponsor_add_drivers():
                 if points != '':
                      error_log.append(f"Line {line_num}: Sponsors cannot have points. Continue.")
                      
-                if sponsor email exist in server:
+                if email exist in server:
                     if points exist:
                         flag error 
                         skip
-                if sponsor email not in server:
+                if email not in server:
                     add sponsor
             elif type == "D":
                 #Assumes type=="D"
