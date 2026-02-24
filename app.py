@@ -8,7 +8,7 @@ from authentication import auth_bp
 from support import supp_bp
 from reports import report_bp
 from sponsor import sponsor_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, SponsorCompanyRules
 from datetime import datetime
 from flask_migrate import Migrate
 import os
@@ -185,6 +185,10 @@ def adjust_points():
         flash("An error occurred while saving to the database.")
     
     return redirect(url_for("sponsor_view_drivers"))
+
+@app.route("/support/organization/rules")
+def view_org_rules():
+    return render_template("/sponsor/sponsor_view_rules.html")
 
 # Hardcoded catalog
 catalog_items = [

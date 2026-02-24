@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Add Organization Rules</title>
+{% endblock %}
+
+{% block body %}
+<h1>Organization Rules</h1>
+<p>Add to the rules that govern what your organization views as good or bad driving behaviors.</p>
+
+<form action="{{ url_for('submit_rule') }}" method="POST">
+<label for="rule_type"> What would you like help with? </label>
+    <select name="rule_type" id="rule_type">
+        <option value="good">This rule describes a good driving behavior</option>
+        <option value="bad">This rule describes a bad driving behavior</option>
+    </select>
+    <br>
+    <label for="details"> Describe the rule:</label>
+    <br>
+    <textarea id="details" name="details" rows="4" cols="50"></textarea>
+    <br>
+
+    <button type="submit">Submit</button>
+
+</form>
+
+
+{%endblock%}
