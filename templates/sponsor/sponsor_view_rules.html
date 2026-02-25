@@ -16,7 +16,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for request in requests %}
+        {% for request in request1 %}
         <tr>
             <td>{{request.req_id}} </td>
             <td>{{request.rule}}</td>
@@ -35,12 +35,13 @@
         </tr>
     </thead>
     <tbody>
-        {% for request in requests %}
+        {% for request in request2 %}
         <tr>
             <td>{{request.req_id}} </td>
             <td>{{request.rule}}</td>
         </tr>
         {% endfor %}
     </tbody>
-
+</table><br><br>
+<a href="{{ url_for('new_rule') }}">Add a New Rule!</a>
 {%endblock%}

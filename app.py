@@ -186,9 +186,30 @@ def adjust_points():
     
     return redirect(url_for("sponsor_view_drivers"))
 
-@app.route("/support/organization/rules")
+@app.route("/support/organization/rules", methods=["GET"])
 def view_org_rules():
-    return render_template("/sponsor/sponsor_view_rules.html")
+    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    sourceORG = profile.company_id
+    good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
+    bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
+    return render_template("/sponsor/sponsor_view_rules.html", request1 = good_request, request2 = bad_request)
+
+@app.route("/sponsor/organization/rules/new_rule")
+def new_rule():
+    return render_template("/sponsor/sponsor_add_rule.html")
+
+@app.route("/sponsor/organization/rules/submit", methods=["POST"])
+def submit_rule():
+    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    sourceORG = profile.company_id
+    rType = request.form.get("rule_type")
+    details = request.form.get("details")
+
+    new_rule = SponsorCompanyRules(company_id=sourceORG, nature=rType, rule=details)
+
+    db.session.add(new_rule)
+    db.session.commit()
+    return redirect(url_for("view_org_rules"))
 
 # Hardcoded catalog
 catalog_items = [
@@ -388,4 +409,4 @@ def add_shipping_info():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

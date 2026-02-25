@@ -27,7 +27,7 @@ def role_required(*roles):
 ALLOWED_EXTENSIONS = {'txt', 'csv'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+"""
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
 @login_required
 @role_required("sponsor")
@@ -131,3 +131,4 @@ def sponsor_add_drivers():
 
         return redirect(url_for("sponsor_add_drivers"))
     return render_template("sponsor/sponsor_add_drivers.html")
+"""
