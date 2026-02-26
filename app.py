@@ -217,14 +217,34 @@ catalog_items = [
     {"name": "CB Radio", "description": "Stay connected on the road", "price": 1500},
     {"name": "$50 Taco Bell Gift Card", "description": "Redeemable at any location", "price": 3000},
 ]
+catalog_price_range = {"min": 0, "max": 10000}
 @app.route("/sponsor/sponsor_catalog_editor")
 @role_required("sponsor")
 def sponsor_catalog_editor():
     return render_template("sponsor/sponsor_catalog_editor.html", items=catalog_items)
+@app.route('/sponsor/sponsor_catalog/set-price-range', methods=['POST'])
+def sponsor_catalog_set_price_range():
+    min_price = int(request.form.get("min_price", 0))
+    max_price = int(request.form.get("max_price", 10000))
+
+    if min_price > max_price:
+        flash('error min price greater than max')
+        return redirect(url_for('sponsor_catalog'))
+
+    catalog_price_range["min"] = min_price
+    catalog_price_range["max"] = max_price
+
+    flash(f'Point range: {min_price} - {max_price} pts')
+    return redirect(url_for('sponsor_catalog_editor'))
 
 @app.route("/sponsor/sponsor_catalog_editor/add", methods=["POST"])
 @role_required("sponsor")
 def sponsor_catalog_add():
+    price = int(request.form.get("price"))
+    if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
+        flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
+        return redirect(url_for("sponsor_catalog_editor"))
+
     catalog_items.append({
         "name": request.form.get("name"),
         "description": request.form.get("description"),
@@ -236,13 +256,18 @@ def sponsor_catalog_add():
 @app.route("/sponsor/sponsor_catalog_editor/edit/<int:item_index>", methods=["POST"])
 @role_required("sponsor")
 def sponsor_catalog_edit(item_index):
+    price = int(request.form.get("price"))
+    if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
+        flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
+        return redirect(url_for("sponsor_catalog_editor"))
+
     if 0 <= item_index < len(catalog_items):
         catalog_items[item_index] = {
             "name": request.form.get("name"),
             "description": request.form.get("description"),
             "price": int(request.form.get("price"))
         }
-        flash("Item updated sucessfuly")
+        flash("Item price changed sucessfuly")
     return redirect(url_for("sponsor_catalog_editor"))
 
 @app.route("/sponsor/sponsor_catalog_editor/delete/<int:item_index>", methods=["POST"])
