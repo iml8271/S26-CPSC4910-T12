@@ -63,7 +63,8 @@ nav {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
+    display: flex !important;
+    flex-direction: row !important;
     justify-content: center;     /* center the links horizontally */
     gap: 2rem;                   /* space between nav items */
     flex-wrap: wrap;             /* allow wrapping on small screens */
