@@ -103,6 +103,8 @@ nav {
 /* Guest links */
 .guest-nav {
     gap: 1.5rem;
+    display: flex;
+    flex-direction: row;
 }
 
 .guest-nav a {
