@@ -1,11 +1,14 @@
-from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort
+from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile
+from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverApplications
 from datetime import datetime
+from helpers import driver_create
 
 auth_bp = Blueprint("auth",__name__)
+        
+
 
 # Login route
 @auth_bp.route("/login", methods=["GET","POST"])
@@ -101,7 +104,7 @@ def handle_driver_signup():
         if not get_password_strength(password):
             return render_template("auth/signup.html", error="Password does not meet minimums")
         
-        hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
+        #hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
         
         #Email Checker
         #tba
@@ -118,22 +121,39 @@ def handle_driver_signup():
         if not company_id:
             return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
 
-        new_user = Users(username=username,
-            password=hashed_password,
-            email=email,
-            role=role,
-        )
-        new_user.driver_profile = DriverProfile(
-            firstname=firstname,
-            lastname=lastname,
-            streetname=streetname,
-            city=city,
-            zipcode=zipcode,
-            company_id=company_id
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for("auth.handle_login"))
+
+        try:
+            new_user = driver_create(
+                username=username,
+                password=password,
+                email = email,
+                firstname=firstname,
+                lastname=lastname,
+                streetname=streetname,
+                city=city,
+                zipcode=zipcode,
+                company_id=company_id,
+                status="pending",
+                application_reason= "Sign Up"
+            )
+            flash(f"Driver {new_user.email} created successfully!", "success")
+            return redirect(url_for("auth.handle_login"))
+        except ValueError as ve:
+            return render_template(
+                "driver/driver_signup.html",
+                error=str(ve),   # ← shows "Email already registered" etc.
+                companies=companies
+            )
+        except RuntimeError as re:
+            # Show the FULL error during dev
+            import traceback
+            full_error = traceback.format_exc()
+            print("DRIVER CREATE ERROR:", full_error)   # ← prints to terminal
+            return render_template(
+                "driver/driver_signup.html",
+                error=f"Registration failed: {str(re)} (check terminal for details)",
+                companies=companies
+            )
     return render_template("driver/driver_signup.html",companies=companies)
 
 # Signup - Sponsor

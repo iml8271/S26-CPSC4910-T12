@@ -8,7 +8,6 @@ from functools import wraps
 from authentication import auth_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
 from datetime import datetime
-from flask_migrate import Migrate
 import os
 
 report_bp = Blueprint("report",__name__)

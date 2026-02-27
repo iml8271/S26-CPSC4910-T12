@@ -1,0 +1,10 @@
+# Python virtual environments
+env/
+venv/
+.venv/
+venv-*/
+*.pyc
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage

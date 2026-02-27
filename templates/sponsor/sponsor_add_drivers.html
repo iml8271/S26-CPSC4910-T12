@@ -1,25 +1,38 @@
 {% extends "base.html" %}
 
-{% block head %}
-<title>Sponsor-Add Drivers</title>
-{% endblock %}
-
 {% block body %}
 <div class="center-body-div">
     <h1>My Drivers - Add Drivers</h1>
-    <p>Upload a pipe-delimited (.txt or .csv) file with format:</p>
-    <form method="POST" action="{{ url_for('sponsor_settings') }}" enctype="multipart/form-data">
-        <label for="sponsor-upload-drivers">Upload File:</label>
-    <br>
-    <input 
-        type="file" 
-        name="bulk_upload_file"
-        id="sponsor-upload-drivers"  
-        accept=".txt,.csv"
-        required
-    >
+    
+    {% if processed %}
+        <div class="results-banner" style="padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
+            <h3>Upload Results</h3>
+            <p><strong>Successfully Processed:</strong> {{ success_count }}</p>
+
+            {% if error_log %}
+                <p style="color: #dc3545;"><strong>Issues encountered ({{ error_log|length }}):</strong></p>
+                <div class="error-box" style="background: #fff; border: 1px solid #ffc107; padding: 10px; max-height: 200px; overflow-y: auto; text-align: left; font-family: monospace; font-size: 0.9em;">
+                    {% for error in error_log %}
+                        <div style="margin-bottom: 5px; border-bottom: 1px solid #eee;">• {{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="color: #28a745;">Perfect upload! No errors found.</p>
+            {% endif %}
+        </div>
+        <hr>
+    {% endif %}
+
+    <p>Upload a pipe-delimited (.txt) file with format:</p>
+    <code>Type | Org | FirstName | LastName | Email | Points | Reason</code>
     <br><br>
-    <button type="submit">Upload</button>
+
+    <form method="POST" action="{{ url_for('sponsor.sponsor_add_drivers') }}" enctype="multipart/form-data">
+        <label for="sponsor-upload-drivers">Upload File:</label>
+        <br>
+        <input type="file" name="bulk_upload_file" id="sponsor-upload-drivers" accept=".txt" required>
+        <br><br>
+        <button type="submit">Upload</button>
     </form>
 </div>
 {% endblock %}
