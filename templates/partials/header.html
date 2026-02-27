@@ -41,6 +41,16 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>
                             </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="driversDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Drivers
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="driversDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('sponsor_view_drivers') }}">List</a>
+                                    <li><a class="dropdown-item" href="{{ url_for('sponsor.pending_drivers') }}">Appliciants</a>
+                                    <li><a class="dropdown-item" href="{{ url_for('sponsor.sponsor_add_drivers') }}">Upload</a>
+                                </ul>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('sponsor_settings') }}">Settings</a>
                             </li>

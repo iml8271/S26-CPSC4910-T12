@@ -132,7 +132,7 @@ def sponsor_view_drivers():
     sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
     if not sponsor:
         return redirect(url_for("view_sponsor_dashboard"))
-    drivers = DriverProfile.query.filter_by(company_id=sponsor.company_id).all()
+    drivers = DriverProfile.query.filter_by(company_id=sponsor.company_id, is_active=True).all()
     return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
 
 @app.route("/sponsor/adjust_points", methods=["POST"])
@@ -143,7 +143,7 @@ def adjust_points():
         driver_id = int(driver_id_raw.strip())
     except (TypeError, ValueError):
         flash("Invalid driver ID.")
-        return redirect(url_for("ponsor_view_drivers"))
+        return redirect(url_for("sponsor_view_drivers"))
     print(f"Updated Driver ID:{driver_id}")
     sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
     if not sponsor:

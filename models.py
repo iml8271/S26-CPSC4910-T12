@@ -98,7 +98,7 @@ class DriverApplications(db.Model):
     status = db.Column(db.String(10), nullable=False)
 
     # Reason
-    reason = db.Column(db.String(250), nullable=False)
+    reason = db.Column(db.String(250), nullable=True)
 
     
 class DriverPointsHistory(db.Model):

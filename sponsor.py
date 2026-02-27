@@ -12,6 +12,13 @@ from helpers import driver_create,driver_update_points,sponsor_create
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
+def get_sponsor_profile():
+    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    if not sponsor_profile:
+        flash("Sponsor profile not found.")
+        return redirect(url_for("handle_logout"))
+    return sponsor_profile
+
 # Roles
 def role_required(*roles):
     def wrapper(fn):
@@ -26,10 +33,71 @@ def role_required(*roles):
         return decorated_view
     return wrapper
 
+@sponsor_bp.route("/driver_list/pending", methods=["GET","POST"])
+@login_required
+@role_required("sponsor")
+def pending_drivers():
+    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    if not sponsor_profile:
+        return redirect(url_for("handle_logout"))
+    applicants = DriverApplications.query.filter_by(
+        company_id=sponsor_profile.company_id,
+        status="pending").all()
+    applicants_profiles = [app.driver_profile for app in applicants]
+    return render_template("sponsor/sponsor_pending_drivers.html",drivers=applicants_profiles)
+
+@sponsor_bp.route("/driver_list/accept/<int:driver_id>", methods=["POST"])
+@login_required
+@role_required("sponsor")
+def driver_accept(driver_id):
+    try:
+        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        if application:
+            application.status = "accepted"
+            if application.driver_profile:
+                application.driver_profile.is_active = True
+            db.session.commit()
+            flash("Driver accepted!", "success")
+        else:
+            flash("Application not found.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Accept Error: {e}")
+        flash(f"Unable to accept Driver")
+    
+    return redirect(url_for("sponsor.pending_drivers"))
+
+@sponsor_bp.route("/driver_list/reject", methods=["POST"])
+@login_required
+@role_required("sponsor")
+def driver_reject():
+    driver_id= request.form.get("driver_id")
+    reason = request.form.get("reason").strip()
+    
+    try:
+        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        
+        if application:
+            application.status = "rejected"
+            application.reason = reason
+            
+            if application.driver_profile:
+                application.driver_profile.is_active = False
+                
+            db.session.commit()
+            flash("Driver rejected.", "warning")
+            
+    except Exception as e:
+        db.session.rollback()
+        flash("Unable to process rejection.", "danger")
+
+    return redirect(url_for("sponsor.pending_drivers"))
+
+
 ALLOWED_EXTENSIONS = {'txt'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-"""
+
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
 @login_required
 @role_required("sponsor")
@@ -218,7 +286,7 @@ def sponsor_add_drivers():
                         continue
                 else:      
                     error_log.append(f"Line {line_num}: Invalid type '{user_type}'. Skipped.")
-                    next 
+                    continue
         
         except UnicodeDecodeError:
             flash("Error reading file: Ensure it is saved in UTF-8 encoding.", "danger")
@@ -230,71 +298,4 @@ def sponsor_add_drivers():
         success_count=success_count,
         processed=True  # A flag to show the results div
         )
-
-        for line_num, row in enumerate(reader, start=1):
-            # Cleaning
-            row = [field.strip() for field in row]
-
-            # Field Count Validation
-            if len(row) < 5:
-                error_log.append(f"Line {line_num}: Too few fields (got {len(row)})")
-                continue
-
-            # Extraction
-            type = row[0].upper()
-            org  = row[1]
-            first_name = row[2]
-            last_name  = row[3]
-            email     = row[4]
-            points = row[5] if len(row) > 5 else ''
-            reason    = row[6] if len(row) > 6 else ""
-
-            # Bulk Upload Rules
-            if org != "":
-                error_log.append(f"Line {line_num}: Must omit the organization name field. Continue.")
-
-            if type == "O":
-                error_log.append(f"Line {line_num}: Type 'O' is restricted. Skipped.")
-                continue
-            elif type == "S":
-                if points != '':
-                     error_log.append(f"Line {line_num}: Sponsors cannot have points. Continue.")
-                     
-                if sponsor email exist in server:
-                    if points exist:
-                        flag error 
-                        skip
-                if sponsor email not in server:
-                    add sponsor
-            elif type == "D":
-                #Assumes type=="D"
-                driver_profile = NULL
-
-                # Driver Checker
-                Check if first_name, last_name and email empty:
-                    if empty, skip line and log error
-                Query driver table for driver profile
-                if profile exists:
-                    if reason is empty:
-                        reason = f"Bulk Upload by Sponsor {sponsor_profile.first_name}"    
-                    query drive prfile exisitng points
-                    if points exists:
-                        new total = points + exisitng points
-                    commit new driver points
-                
-                elif not(first_name,last name and email match a record):
-                    create the driver profile
-                    driver_profile = new profile
-                    if reason is empty:
-                        reason = "New Driver"
-                    if points is empty: 
-                        points = 0
-                    upload new driver wiht points
-            else:      
-                error_log.append(f"Line {line_num}: Invalid type '{type}'. Skipped.")
-                skip entire line    
-
-
-        return redirect(url_for("sponsor_add_drivers"))
     return render_template("sponsor/sponsor_add_drivers.html")
-"""
