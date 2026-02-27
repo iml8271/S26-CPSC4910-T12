@@ -52,7 +52,27 @@ body {
     font-weight: 700;
     color: #1a3c5e;
     letter-spacing: -0.5px;
-    line-height: 1.1;
+    text-align: center;
+}
+
+/* Navigation */
+nav {
+    width: 100%;
+}
+
+.navbar-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center;     /* center the links horizontally */
+    gap: 2rem;                   /* space between nav items */
+    flex-wrap: wrap;             /* allow wrapping on small screens */
+}
+
+.navbar-nav .nav-item {
+    margin: 0;
 }
 
 /* Nav link styling - matches your original */
@@ -82,8 +102,14 @@ body {
     background-color: rgba(220, 53, 69, 0.1) !important;
 }
 
-/* Optional guest links (right side) */
-.guest-nav .nav-link {
+/* Guest links */
+.guest-nav {
+    gap: 1.5rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.guest-nav a {
     color: #0066cc;
     font-weight: 600;
 }

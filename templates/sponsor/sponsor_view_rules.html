@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Organization Rules</title>
+{% endblock %}
+
+{% block body %}
+<h1>Organization Rules</h1>
+<p>View the rules that govern what your organization views as good or bad driving behaviors.</p>
+<br><p>Good Driving Behaviors</p>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Rule</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in request1 %}
+        <tr>
+            <td>{{request.req_id}} </td>
+            <td>{{request.rule}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table><br>
+
+
+<br><p>bad Driving Behaviors</p>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Rule</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in request2 %}
+        <tr>
+            <td>{{request.req_id}} </td>
+            <td>{{request.rule}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table><br><br>
+<a href="{{ url_for('new_rule') }}">Add a New Rule!</a>
+{%endblock%}

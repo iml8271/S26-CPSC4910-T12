@@ -10,7 +10,6 @@
 
 <br>
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages() %}
 {% if messages %}
   {% for message in messages %}
@@ -19,7 +18,17 @@
 {% endif %}
 {% endwith %}
 
-<!-- Add New Item -->
+
+<h2>Min and Max Point Range</h2>
+<form method="POST" action="{{ url_for('sponsor_catalog_set_price_range') }}">
+  <label>Minimum Point: <input type="number" name="min_price" value="{{ min_price or 0 }}" min="0"></label>
+  <label>Maximum Points (pts): <input type="number" name="max_price" value="{{ max_price or 10000 }}" min="0"></label>
+  <button type="submit">Set Range</button>
+</form>
+
+
+
+
 <h2>Add New Item</h2>
 <form method="POST" action="{{ url_for('sponsor_catalog_add') }}">
   <input type="text" name="name" placeholder="Item Name" required>
@@ -28,7 +37,7 @@
   <button type="submit">Add Item</button>
 </form>
 
-<!-- Catalog Table -->
+
 <h2>Current Catalog</h2>
 <table border="1">
   <thead>
