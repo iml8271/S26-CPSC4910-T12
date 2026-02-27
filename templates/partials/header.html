@@ -1,48 +1,65 @@
 <header class="site-header">
-    <div class="header-container">
-        <h1>PointPitStop</h1>
+    <nav class="navbar navbar-expand-lg">
+        <div class="header-container container-fluid">
+            <a class="navbar-brand" href="/"></a>
+                <h1>PointPitStop</h1>
+            </a>
 
-        <nav>
-            {% if current_user.is_authenticated %}
-                <ul class="navbar-nav">
-                    {% if current_user.role == 'driver' %}
+            <button 
+                class="navbar-toggler" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#mainNavbarContent" 
+                aria-controls="mainNavbarContent" 
+                aria-expanded="false" 
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbarContent">
+                {% if current_user.is_authenticated %}
+                    <ul class="navbar-nav mx-auto">
+                        {% if current_user.role == 'driver' %}
+                            <!-- Mini Dropdown Menu help coded by AI-->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="driversDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Dashboard
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="driversDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('driver_catalog') }}">Catalog</a>
+                                    <li><a class="dropdown-item" href="{{ url_for('driver_points_review') }}">Points Review</a>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('driver_faq') }}">Frequently Asked Questions</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('driver_settings') }}">Settings</a>
+                            </li>
+                        {% elif current_user.role == 'sponsor' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('sponsor_settings') }}">Settings</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
-                            <a href="{{ url_for('view_driver_dashboard') }}">Dashboard</a>
+                            <a class="nav-link logout-link" href="{{ url_for('auth.handle_logout') }}">Logout</a>
+                        </li>
+                    </ul>
+                {% else %}
+                    <ul class="navbar-nav guest-nav">
+                        <li class="nav-item">
+                            <a href="{{ url_for('auth.handle_driver_signup') }}">Apply to be a driver!</a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('driver_catalog') }}">View Catalog</a>
+                            <a href="{{ url_for('auth.handle_login') }}">Login</a>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('driver_faq') }}">Frequently Asked Questions</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('driver_points_review') }}">Points Review</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('driver_settings') }}">Settings</a>
-                        </li>
-                    {% elif current_user.role == 'sponsor' %}
-                        <li class="nav-item">
-                            <a href="{{ url_for('view_sponsor_dashboard') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('sponsor_settings') }}">Settings</a>
-                        </li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <a href="{{ url_for('auth.handle_logout') }}">Logout</a>
-                    </li>
-                </ul>
-            {% else %}
-                <ul class="navbar-nav guest-nav">
-                    <li class="nav-item">
-                        <a href="{{ url_for('auth.handle_driver_signup') }}">Apply to be a driver!</a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('auth.handle_login') }}">Login</a>
-                    </li>
-                </ul>
-            {% endif %}
-        </nav>
-    </div>
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
 </header>

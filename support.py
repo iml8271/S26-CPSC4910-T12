@@ -7,7 +7,6 @@ from functools import wraps
 from authentication import auth_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
 from datetime import datetime
-from flask_migrate import Migrate
 import os
 
 supp_bp = Blueprint("support",__name__)

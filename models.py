@@ -61,13 +61,16 @@ class DriverProfile(db.Model):
     lastname = db.Column(db.String(250), nullable=False)
     
     # Address fields
-    streetname = db.Column(db.String(250), nullable=False)
-    city = db.Column(db.String(250), nullable=False)
-    zipcode = db.Column(db.String(10), nullable=False)
+    streetname = db.Column(db.String(250))
+    city = db.Column(db.String(250))
+    zipcode = db.Column(db.String(10))
 
     # Sponsor
     company = db.relationship("SponsorCompany",back_populates="drivers")
     company_id = db.Column(db.Integer,db.ForeignKey("sponsor_companies.id"),nullable=False)
+
+    # Status
+    is_active = db.Column(db.Boolean, default=False, nullable=False, index=True)
 
     #points
     driver_points_history = db.relationship("DriverPointsHistory"
@@ -114,7 +117,7 @@ class DriverPointsHistory(db.Model):
 
     # Sponsor Records
     sponsor_user = db.relationship("SponsorProfile")
-    sponsor_user_id = db.Column(db.Integer,db.ForeignKey("sponsor_profile.user_id"),nullable=False)      
+    sponsor_user_id = db.Column(db.Integer,db.ForeignKey("sponsor_profile.user_id"),nullable=True)      
 
 
 ## SPONSOR -----
@@ -149,12 +152,12 @@ class SponsorCompanyRules(db.Model):
     __tablename__ = "Sponsor_Org_Rules"
     #company and tracking info
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.FpreignKey(SponsorCompany.id), nullable = False)
+    company_id = db.Column(db.Integer, db.ForeignKey(SponsorCompany.id), nullable = False)
     #rule info
     #whether the rule describes a good or bad driving behavior
     nature = db.Column(db.String(10), nullable = False)
     #the rule itself
-    rule = db.column(db.string(255), nullable = False)
+    rule = db.Column(db.String(255), nullable = False)
 
 
 ## SUPPORT -----
