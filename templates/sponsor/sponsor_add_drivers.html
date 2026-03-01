@@ -1,38 +1,49 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="center-body-div">
-    <h1>My Drivers - Add Drivers</h1>
-    
-    {% if processed %}
-        <div class="results-banner" style="padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
-            <h3>Upload Results</h3>
-            <p><strong>Successfully Processed:</strong> {{ success_count }}</p>
+<div class="container py-5">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="mb-4 text-center" style="color: #ff9800; font-weight: 700;">Bulk Add Drivers 📊</h2>
 
-            {% if error_log %}
-                <p style="color: #dc3545;"><strong>Issues encountered ({{ error_log|length }}):</strong></p>
-                <div class="error-box" style="background: #fff; border: 1px solid #ffc107; padding: 10px; max-height: 200px; overflow-y: auto; text-align: left; font-family: monospace; font-size: 0.9em;">
-                    {% for error in error_log %}
-                        <div style="margin-bottom: 5px; border-bottom: 1px solid #eee;">• {{ error }}</div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p style="color: #28a745;">Perfect upload! No errors found.</p>
-            {% endif %}
+        {% if processed %}
+            <div class="alert {% if error_log %}alert-warning{% else %}alert-success{% endif %} rounded-4 p-4 mb-5 border-0 shadow-sm" role="alert">
+                <h4 class="alert-heading font-weight-bold">Upload Results</h4>
+                <p class="mb-1"><strong>Successfully Processed:</strong> {{ success_count }}</p>
+
+                {% if error_log %}
+                    <p class="mb-2"><strong>Issues encountered ({{ error_log|length }}):</strong></p>
+                    <div class="error-box bg-white p-3 rounded-3" style="max-height: 150px; overflow-y: auto; text-align: left; font-family: monospace; font-size: 0.9em; border: 1px solid #ffc107;">
+                        {% for error in error_log %}
+                            <div class="text-danger mb-1">• {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-success mb-0">Perfect upload! No errors found. ✅</p>
+                {% endif %}
+            </div>
+            <hr class="mb-5">
+        {% endif %}
+
+        <div class="alert alert-info rounded-4 mb-4" style="background-color: #e3f2fd; border-color: #bbdefb; color: #0d47a1;">
+            <p class="mb-2"><strong>File Format Instructions:</strong></p>
+            <p class="mb-2">Upload a pipe-delimited <code>.txt</code> file with this structure:</p>
+            <code class="text-dark bg-white p-2 rounded d-block mb-2">Type | Org | FirstName | LastName | Email | Points | Reason</code>
+            <small class="text-muted">Fields: User Role, Organization, Driver Name, Email, Points, Reason for Points.</small>
         </div>
-        <hr>
-    {% endif %}
 
-    <p>Upload a pipe-delimited (.txt) file with format:</p>
-    <code>Type | Org | FirstName | LastName | Email | Points | Reason</code>
-    <br><br>
-
-    <form method="POST" action="{{ url_for('sponsor.add_drivers') }}" enctype="multipart/form-data">
-        <label for="sponsor-upload-drivers">Upload File:</label>
-        <br>
-        <input type="file" name="bulk_upload_file" id="sponsor-upload-drivers" accept=".txt" required>
-        <br><br>
-        <button type="submit">Upload</button>
-    </form>
+        <form method="POST" action="{{ url_for('sponsor.add_drivers') }}" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label for="sponsor-upload-drivers" class="form-label" style="color: #5d4037; font-weight: 600;">Choose File:</label>
+                <input type="file" name="bulk_upload_file" id="sponsor-upload-drivers" class="form-control rounded-pill" accept=".txt" required>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-custom btn-lg rounded-pill shadow-sm">
+                    <i class="bi bi-cloud-upload me-1"></i> Upload Drivers
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

@@ -21,15 +21,23 @@ def handle_login():
 
         if user and check_password_hash(user.password, password):
             login_user(user)
-            dashboards = {
+            return redirect(url_for("dashboard"))
+            """dashboards = {
                 "admin": "view_admin_dashboard",
                 "sponsor": "view_sponsor_dashboard",
                 "driver": "view_driver_dashboard"
             }
-            return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))
+            return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))"""
         else:
             return render_template("auth/login.html", error="Invalid username or password")
     return render_template("auth/login.html") 
+
+# Logout Route
+@auth_bp.route("/logout")
+@login_required
+def handle_logout():
+    logout_user()
+    return redirect(url_for("auth.handle_login")) 
 
 # Signup Route:
 # registering new users into the system, currently works for only creating new drivers
@@ -260,10 +268,3 @@ def get_password_strength(password):
 
     return has_upper and has_lower and has_digit
     
-
-# Logout Route
-@auth_bp.route("/logout")
-@login_required
-def handle_logout():
-    logout_user()
-    return redirect(url_for("auth.handle_login")) 

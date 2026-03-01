@@ -5,27 +5,43 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-    <h1>Settings - Sponsor</h1>
-<form method="POST" action="{{ url_for('sponsor.sponsor_settings') }}" enctype="multipart/form-data">
-    <label for="sponsor-logo">Choose a Sponsor Logo:</label>
-    <br>
-    <input 
-        type="file" 
-        id="sponsor-logo" 
-        name="sponsor_logo" 
-        accept="image/png, image/jpeg"
-        required
-    >
-    <br><br>
-    <button type="submit">Update</button>
-</form>
-    <br><br>
-    {% if sponsor.company.logo_filename %}
-    <img 
-        src="{{ url_for('static', filename=sponsor.company.logo_filename) }}" 
-        style="max-width:200px; margin-top:20px;"
-    >
-{% endif %}
+<div class="container py-5">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="mb-4" style="color: #ff9800; font-weight: 700;">Sponsor Settings 🏢</h2>
+        
+        <form method="POST" action="{{ url_for('sponsor.sponsor_settings') }}" enctype="multipart/form-data">
+            
+            <div class="mb-4">
+                <label for="sponsor-logo" class="form-label" style="color: #5d4037; font-weight: 600;">Update Company Logo</label>
+                <input 
+                    type="file" 
+                    id="sponsor-logo" 
+                    name="sponsor_logo" 
+                    class="form-control rounded-pill"
+                    accept="image/png, image/jpeg"
+                    required
+                >
+                <div class="form-text" style="color: #795548;">Allowed formats: PNG, JPG</div>
+            </div>
+
+            <div class="d-grid mb-4">
+                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Upload Logo</button>
+            </div>
+        </form>
+
+        {% if sponsor.company.logo_filename %}
+        <div class="text-center mt-3 p-3 rounded-4" style="background-color: #fffaf0; border: 1px dashed #ffe0b2;">
+            <p class="text-muted mb-2" style="font-size: 0.9rem;">Current Logo:</p>
+            <img 
+                src="{{ url_for('static', filename=sponsor.company.logo_filename) }}" 
+                alt="Sponsor Logo"
+                class="img-fluid rounded"
+                style="max-width: 150px; height: auto;"
+            >
+        </div>
+        {% endif %}
+        
+    </div>
 </div>
 {% endblock %}

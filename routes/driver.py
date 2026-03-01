@@ -60,5 +60,5 @@ def driver_settings():
 
         db.session.commit()
         flash("Address updated successfully.")
-        return redirect(url_for("driver.driver_settings"))
+        return redirect(url_for("driver.driver_settings"), driver=driver,username=current_user.username)
     return render_template("driver/driver_settings.html", driver=driver,username=current_user.username)

@@ -49,12 +49,14 @@ def load_user(user_id):
 # Load User
 @app.before_request
 def load_user_context():
+    print(f"DEBUG: Current Endpoint is: {request.endpoint}")
     g.profile = None
     # Guest Access pages - No profile needed
     public_endpoints = [
-        "app.view_form",
-        "app.terms",
-        "app.about",
+        "static",
+        "homepage",
+        "terms",
+        "about",
         "auth.handle_signup",
         "auth.handle_login",
         "auth.handle_driver_signup",
@@ -78,12 +80,28 @@ def load_user_context():
             flash("Profile not found. Please log in again.", "danger")
             return redirect(url_for("auth.logout"))
 
-# Logout Route
-@app.route("/logout")
-@login_required
-def handle_logout():
-    logout_user()
-    return render_template("login.html")   
+#------------ Universal Routes--------------
+# Home Route
+@app.route("/")
+def homepage():
+    if app.debug:
+        return redirect(url_for("debugmenu"))
+    return render_template("homepage.html")
+
+# Error Route
+@app.errorhandler(403)
+def forbidden(e):
+    return render_template("403.html"), 403
+
+# Terms
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+# About
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
 # Protected dashboard Route
 @app.route("/dashboard")
@@ -98,6 +116,46 @@ def dashboard():
         return render_template("admin/admin_dashboard.html", username=current_user.username)
     else:
         return redirect(url_for('auth.handle_logout'))
+
+# DEBUG TASKS --------------------
+@app.route("/debug")
+def debugmenu():
+    return render_template("debugmenu.html")
+
+@app.route("/debug/login-driver")
+def debug_driver_login():
+    debug_user = Users.query.filter_by(role="driver").first()
+    
+    if debug_user:
+        login_user(debug_user)
+        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+        return redirect(url_for("dashboard"))
+    
+    flash("No driver found in database to log in!", "danger")
+    return redirect(url_for('debugmenu'))
+@app.route("/debug/login-sponsor")
+def debug_sponsor_login():
+    debug_user = Users.query.filter_by(role="sponsor").first()
+    
+    if debug_user:
+        login_user(debug_user)
+        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+        return redirect(url_for("dashboard"))
+    
+    flash("No driver found in database to log in!", "danger")
+    return redirect(url_for('debugmenu'))
+@app.route("/debug/login-admin")
+def debug_admin_login():
+    debug_user = Users.query.filter_by(role="admin").first()
+    
+    if debug_user:
+        login_user(debug_user)
+        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+        return redirect(url_for("dashboard"))
+    
+    flash("No driver found in database to log in!", "danger")
+    return redirect(url_for('debugmenu'))
+
 
 # Roles
 def role_required(*roles):
@@ -234,26 +292,7 @@ def view_driver_dashboard():
     points = profile.points if profile else 0
     return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=profile)
 
-#------------ Universal Routes--------------
-# Home Route
-@app.route("/")
-def view_form():
-    return redirect(url_for("auth.handle_login"))
 
-# Error Route
-@app.errorhandler(403)
-def forbidden(e):
-    return render_template("403.html"), 403
-
-# Terms
-@app.route("/terms")
-def terms():
-    return render_template("terms.html")
-
-# About
-@app.route("/about")
-def about():
-    return render_template("about.html")
 
 @app.route("/driver/dashboard/driver_catalog")
 @login_required

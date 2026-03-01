@@ -5,33 +5,45 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-    <h2>Log In Page</h2>
-    <form id="login-form" method="POST"
-        action="{{ url_for('auth.handle_login') }}">
-        <label for="username">Username:</label>
-        <input id="username"
-            type="text" name="username" placeholder="Username"><br>
-        <label for="password">Password:</label>
-        <input id="password"
-            type="password" name="password" placeholder="Password" required><br>
-        <label for="checkbox-password-visibility">Show Password</label>
-        <input type="checkbox" id="checkbox-password-visibility">
-        <br>
-        <button type="submit">Enter</button>
-    </form>
-    <br><br>
-    {% if error %} <p class="error"> {{ error }}</p> {% endif %}
-    <br><br>
-    <a href="{{ url_for('auth.handle_forgot_password') }}">Forgot Password?</a>
-    <br><br>
-    <a href="{{ url_for('auth.handle_driver_signup') }}">Apply to be a driver!</a>
-    <br><br>
-    <a href="{{ url_for('auth.handle_sponsor_signup') }}">Sponsor Signup</a>
-    <br><br>
-    <a href="{{ url_for('auth.handle_signup') }}">Sign up Admin!</a>
+<!-- Styled by AI, logic was not-->
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 500px; width: 100%; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="text-center mb-4" style="color: #ff9800; font-weight: 700;">Welcome Back! 🚗</h2>
+        
+        <form id="login-form" method="POST" action="{{ url_for('auth.handle_login') }}">
+            <div class="mb-3">
+                <label for="username" class="form-label" style="color: #5d4037; font-weight: 600;">Username:</label>
+                <input id="username" type="text" name="username" class="form-control rounded-pill" placeholder="Enter your username" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label" style="color: #5d4037; font-weight: 600;">Password:</label>
+                <input id="password" type="password" name="password" class="form-control rounded-pill" placeholder="Enter your password" required>
+            </div>
+            
+            <div class="mb-4 form-check">
+                <input type="checkbox" class="form-check-input" id="checkbox-password-visibility">
+                <label class="form-check-label" for="checkbox-password-visibility" style="color: #795548;">Show Password</label>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Log In</button>
+            </div>
+        </form>
+        
+        {% if error %}
+        <div class="alert alert-danger mt-4 rounded-pill text-center" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        <div class="text-center mt-4">
+            <a href="{{ url_for('auth.handle_forgot_password') }}" class="text-decoration-none" style="color: #f57c00; font-weight: 600;">Forgot Password?</a>
+        </div>
+        
+    </div>
 </div>
-
 <script>
 const passwordInput = document.querySelector("#password");
 const checkboxPasswordVisibility = document.querySelector("#checkbox-password-visibility");

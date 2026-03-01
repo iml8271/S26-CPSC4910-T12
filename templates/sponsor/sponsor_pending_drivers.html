@@ -5,51 +5,71 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-<h1>My Pending Drivers</h1>
-<br><br>
-{% for driver in drivers %}
-    <div class="driver-card">
-        <h3>{{ driver.firstname }} {{ driver.lastname }}</h3>
-        <form action="{{ url_for('sponsor.driver_accept', driver_id=driver.user_id) }}" 
-            method="POST" 
-            style="display: inline;"
-            onsubmit="return confirm('Are you sure you want to approve {{ driver.firstname }} {{ driver.lastname }}?');">
-            <button type="submit" class="btn btn-primary">
-                Accept
-            </button>
-        </form>
+<div class="container py-5">
+    <h2 class="mb-4" style="color: #5d4037; font-weight: 700;">
+        <span style="color: #ff9800;">📋</span> Pending Driver Approvals
+    </h2>
+    
+    <div class="row">
+        {% for driver in drivers %}
+        <div class="col-md-4 mb-4">
+            <div class="driver-card h-100">
+                <div class="driver-card-body d-flex flex-column">
+                    <h3 class="driver-card-title text-center">{{ driver.firstname }} {{ driver.lastname }}</h3>
+                    
+                    <div class="mt-auto d-flex gap-2">
+                        <form action="{{ url_for('sponsor.driver_accept', driver_id=driver.user_id) }}" 
+                            method="POST" 
+                            class="flex-grow-1"
+                            onsubmit="return confirm('Are you sure you want to approve {{ driver.firstname }} {{ driver.lastname }}?');">
+                            <button type="submit" class="btn btn-custom rounded-pill w-100">
+                                Accept
+                            </button>
+                        </form>
 
-        <button type="button"
-            data-bs-toggle="modal" 
-            data-bs-target="#rejectModal"
-            data-driverid="{{ driver.user_id }}" 
-            data-drivername="{{ driver.firstname }} {{ driver.lastname }}"
-        >Reject</button>
+                        <button type="button"
+                            class="btn btn-outline-danger rounded-pill flex-grow-1"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#rejectModal"
+                            data-driverid="{{ driver.user_id }}" 
+                            data-drivername="{{ driver.firstname }} {{ driver.lastname }}"
+                        >Reject</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="card p-5 rounded-4 border-0 shadow-sm" style="background-color: #fffaf0;">
+                <h4 style="color: #795548;">No pending drivers! 🎉</h4>
+                <p class="text-muted">All driver requests have been processed.</p>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-{% endfor %}
 </div>
+
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
       <form action="{{ url_for('sponsor.driver_reject') }}" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title">Reject</h5>
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title" style="color: #d84315; font-weight: 700;">Reject Application</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" name="driver_id" id="targetDriverId">
           
-          <p>Are you sure you want to reject <strong id="targetDriverName"></strong>?</p>
+          <p class="text-muted mb-4">Are you sure you want to reject <strong id="targetDriverName" style="color: #5d4037;"></strong>? This action cannot be undone.</p>
           
           <div class="mb-3">
-            <label class="form-label">Reason</label>
-            <textarea name="reason" class="form-control" rows="3" placeholder="Criminial, bad time delivery, etc." required></textarea>
+            <label class="form-label" style="color: #5d4037; font-weight: 600;">Reason for Rejection</label>
+            <textarea name="reason" class="form-control rounded-3" rows="3" placeholder="e.g. Criminal background, invalid documents..." required></textarea>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success">Reject</button>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger rounded-pill">Confirm Reject</button>
         </div>
       </form>
     </div>

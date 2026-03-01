@@ -12,10 +12,12 @@ import os
 
 report_bp = Blueprint("report",__name__)
 
-@report_bp.route("/")
-@login_required
-def display_landing():
-    return render_template("admin/reports/admin_reports_landing.html")
+# this code doesn't work as '/' is only meant for the landing page/homepage
+# - Karina
+#@report_bp.route("/")
+#@login_required
+#def display_landing():
+#    return render_template("admin/reports/admin_reports_landing.html")
 
 # @report_bp.route("/reports/supportrequests",methods=["GET"])
 # @login_required

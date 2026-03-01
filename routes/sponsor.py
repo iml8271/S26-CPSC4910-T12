@@ -280,7 +280,7 @@ def add_drivers():
                             # Case: Has User Profile & Driver Profile ->
                             # Update Points only
                             driver_update_points(
-                                user_id = driver_profile.user_id,
+                                driver_profile = driver_profile,
                                 points_to_add = points_field,
                                 points_reason = reason,
                                 sponsor_user_id= sponsor_profile.user_id,
