@@ -7,7 +7,7 @@
 {% block body %}
 <div class="center-body-div">
 <h1>My Drivers</h1>
-<a href="{{ url_for('sponsor.sponsor_add_drivers') }}" class="btn btn-primary">
+<a href="{{ url_for('sponsor.add_drivers') }}" class="btn btn-primary">
     Add New Driver
 </a>
 <br><br>
@@ -30,7 +30,7 @@
 <div class="modal fade" id="adjustPointsModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="{{ url_for('adjust_points') }}" method="POST">
+      <form action="{{ url_for('sponsor.adjust_points') }}" method="POST">
         <div class="modal-header">
           <h5 class="modal-title">Adjust Points</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

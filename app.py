@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session,abort,flash
+from flask import Flask, render_template, request, redirect, url_for, session,abort,flash,g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -7,7 +7,9 @@ from functools import wraps
 from authentication import auth_bp
 from support import supp_bp
 from reports import report_bp
-from sponsor import sponsor_bp
+from routes.sponsor import sponsor_bp
+from routes.driver import driver_bp
+from routes.admin import admin_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, SponsorCompanyRules
 from datetime import datetime
 from flask_migrate import Migrate
@@ -33,6 +35,8 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(supp_bp)
 app.register_blueprint(report_bp)
 app.register_blueprint(sponsor_bp)
+app.register_blueprint(driver_bp)
+app.register_blueprint(admin_bp)
 # Create database
 with app.app_context():
     db.create_all()    
@@ -42,12 +46,37 @@ with app.app_context():
 def load_user(user_id):
     return db.session.get(Users, int(user_id))
 
-# LOGO UPLOAD
-UPLOAD_FOLDER = os.path.join(app.static_folder, "images/uploads/logos")
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+# Load User
+@app.before_request
+def load_user_context():
+    g.profile = None
+    # Guest Access pages - No profile needed
+    public_endpoints = [
+        "app.view_form",
+        "app.terms",
+        "app.about",
+        "auth.handle_signup",
+        "auth.handle_login",
+        "auth.handle_driver_signup",
+        "auth.handle_sponsor_signup",
+        "auth.handle_forgot_password"
+    ]
 
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+    if request.endpoint in public_endpoints:
+        return None
+    
+    # If user is logged in, attach to the profile
+    if current_user.is_authenticated:
+        if current_user.role == "driver":
+            g.profile = current_user.driver_profile
+        elif current_user.role == "sponsor":
+            g.profile = current_user.sponsor_profile
+        elif current_user.role == "admin":
+            g.profile = current_user.admin_profile
 
+        if g.profile is None and current_user.role != "admin":
+            flash("Profile not found. Please log in again.", "danger")
+            return redirect(url_for("auth.logout"))
 
 # Logout Route
 @app.route("/logout")
@@ -60,7 +89,15 @@ def handle_logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", username=current_user.username)
+    if current_user.role == "driver":
+        points = g.profile.points if profile else 0
+        return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=g.profile)
+    elif current_user.role == "sponsor":
+        return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=g.profile.firstname)
+    elif current_user.role == "admin":
+        return render_template("admin/admin_dashboard.html", username=current_user.username)
+    else:
+        return redirect(url_for('auth.handle_logout'))
 
 # Roles
 def role_required(*roles):
@@ -82,109 +119,6 @@ def admin_sponsor_list():
     sponsors = SponsorProfile.query.all()
     return render_template("admin/admin_sponsor_list.html",sponsors=sponsors)
 
-# ----- Sponsor Speficic--------------------
-@app.route("/sponsor/settings",methods=["GET","POST"])
-@role_required("sponsor")
-def sponsor_settings():
-    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if request.method == "POST":
-        if "sponsor_logo" not in request.files:
-            flash("No file selected.")
-            return redirect(url_for("sponsor_settings"))
-
-        file = request.files["sponsor_logo"]
-
-        if file.filename == "":
-            flash("No file selected.")
-            return redirect(url_for("sponsor_settings"))
-
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-
-            # Optional: make filename unique
-            unique_filename = f"{sponsor.company_id}_{filename}"
-
-            save_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_filename)
-            file.save(save_path)
-
-            # Store relative path in DB
-            sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
-            db.session.commit()
-
-            flash("Logo uploaded successfully.")
-            return redirect(url_for("sponsor_settings"))
-        else:
-            flash("Invalid file type. Only PNG and JPG allowed.")
-            return redirect(url_for("sponsor_settings"))
-
-    return render_template(
-        "sponsor/sponsor_settings.html",
-        sponsor=sponsor)
-
-def allowed_file(filename):
-    return "." in filename and \
-        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-@app.route("/sponsor/driver_list", methods=["GET","POST"])
-@role_required("sponsor")
-def sponsor_view_drivers():
-    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if not sponsor:
-        return redirect(url_for("view_sponsor_dashboard"))
-    drivers = DriverProfile.query.filter_by(company_id=sponsor.company_id, is_active=True).all()
-    return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
-
-@app.route("/sponsor/adjust_points", methods=["POST"])
-@role_required("sponsor")
-def adjust_points():
-    driver_id_raw = request.form.get("driver_id")
-    try:
-        driver_id = int(driver_id_raw.strip())
-    except (TypeError, ValueError):
-        flash("Invalid driver ID.")
-        return redirect(url_for("sponsor_view_drivers"))
-    print(f"Updated Driver ID:{driver_id}")
-    sponsor = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if not sponsor:
-        flash("Sponsor profile not found.")
-        return redirect(url_for("sponsor_view_drivers"))
-
-    driver = DriverProfile.query.filter_by(
-        user_id=driver_id,
-        company_id=sponsor.company_id
-    ).first()
-
-    
-    if not driver:
-        flash("Error: Driver not found.")
-        return redirect(url_for("sponsor_view_drivers"))
-    points_change = int(request.form.get("points_change"))
-    reason = request.form.get("reason")
-    
-    # Calculate new total points
-    new_total = driver.points + points_change
-    
-    # Save New total points
-    new_log = DriverPointsHistory(
-        user_id=driver.user_id,
-        points_change=points_change,
-        current_points=new_total,
-        reason=reason,
-        sponsor_user_id=sponsor.user_id,
-    )
-    try:
-        db.session.add(new_log)
-        print("NEW LOG:", new_log.user_id, new_log.points_change, new_log.current_points)
-        db.session.commit()
-        db.session.refresh(driver)
-        flash(f"Successfully adjusted points for {driver.firstname}!")
-    except Exception as e:
-        db.session.rollback()
-        print(f"DATABASE ERROR: {e}")
-        flash("An error occurred while saving to the database.")
-    
-    return redirect(url_for("sponsor_view_drivers"))
 
 @app.route("/support/organization/rules", methods=["GET"])
 def view_org_rules():
@@ -279,37 +213,7 @@ def sponsor_catalog_delete(item_index):
     return redirect(url_for("sponsor_catalog_editor"))
 
 # ------- Driver Speficics ------------------
-@app.route("/driver/settings", methods=["GET","POST"])
-@role_required("driver")
-def driver_settings():
-    driver = DriverProfile.query.filter_by(user_id=current_user.id).first()
-    if request.method=="POST":
-        #Address Checker
-        streetname = request.form.get("streetname")
-        city = request.form.get("city")
-        zipcode = request.form.get("zipcode")
-        #tba
 
-        if not streetname or not city or not zipcode:
-            flash("All address fields are required.")
-            return redirect(url_for("driver_settings"))
-        
-        if (driver.streetname == streetname and
-            driver.city == city and
-            driver.zipcode == zipcode):
-            
-            flash("No changes detected.")
-            return redirect(url_for("driver_settings"))
-
-        # Only update changed fields
-        driver.streetname = streetname
-        driver.city = city
-        driver.zipcode = zipcode
-
-        db.session.commit()
-        flash("Address updated successfully.")
-        return redirect(url_for("driver_settings"))
-    return render_template("driver/driver_settings.html", driver=driver,username=current_user.username)
 
 # ------------ Protected dashboard Route --------------
 @app.route("/admin/dashboard")

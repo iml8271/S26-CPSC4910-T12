@@ -75,7 +75,6 @@ def handle_driver_signup():
         username = request.form.get("username").strip()
         password = request.form.get("password").strip()
         email = request.form.get("email").strip()
-        role = "driver"
 
         #First Name Checker
         firstname = request.form.get("firstname").strip()
@@ -141,14 +140,14 @@ def handle_driver_signup():
         except ValueError as ve:
             return render_template(
                 "driver/driver_signup.html",
-                error=str(ve),   # ← shows "Email already registered" etc.
+                error=str(ve),
                 companies=companies
             )
         except RuntimeError as re:
             # Show the FULL error during dev
             import traceback
             full_error = traceback.format_exc()
-            print("DRIVER CREATE ERROR:", full_error)   # ← prints to terminal
+            print("DRIVER CREATE ERROR:", full_error)
             return render_template(
                 "driver/driver_signup.html",
                 error=f"Registration failed: {str(re)} (check terminal for details)",

@@ -27,7 +27,7 @@
     <code>Type | Org | FirstName | LastName | Email | Points | Reason</code>
     <br><br>
 
-    <form method="POST" action="{{ url_for('sponsor.sponsor_add_drivers') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('sponsor.add_drivers') }}" enctype="multipart/form-data">
         <label for="sponsor-upload-drivers">Upload File:</label>
         <br>
         <input type="file" name="bulk_upload_file" id="sponsor-upload-drivers" accept=".txt" required>
