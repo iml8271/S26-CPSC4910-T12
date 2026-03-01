@@ -21,15 +21,23 @@ def handle_login():
 
         if user and check_password_hash(user.password, password):
             login_user(user)
-            dashboards = {
+            return redirect(url_for("dashboard"))
+            """dashboards = {
                 "admin": "view_admin_dashboard",
                 "sponsor": "view_sponsor_dashboard",
                 "driver": "view_driver_dashboard"
             }
-            return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))
+            return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))"""
         else:
             return render_template("auth/login.html", error="Invalid username or password")
     return render_template("auth/login.html") 
+
+# Logout Route
+@auth_bp.route("/logout")
+@login_required
+def handle_logout():
+    logout_user()
+    return redirect(url_for("auth.handle_login")) 
 
 # Signup Route:
 # registering new users into the system, currently works for only creating new drivers
@@ -75,7 +83,6 @@ def handle_driver_signup():
         username = request.form.get("username").strip()
         password = request.form.get("password").strip()
         email = request.form.get("email").strip()
-        role = "driver"
 
         #First Name Checker
         firstname = request.form.get("firstname").strip()
@@ -141,14 +148,14 @@ def handle_driver_signup():
         except ValueError as ve:
             return render_template(
                 "driver/driver_signup.html",
-                error=str(ve),   # ← shows "Email already registered" etc.
+                error=str(ve),
                 companies=companies
             )
         except RuntimeError as re:
             # Show the FULL error during dev
             import traceback
             full_error = traceback.format_exc()
-            print("DRIVER CREATE ERROR:", full_error)   # ← prints to terminal
+            print("DRIVER CREATE ERROR:", full_error)
             return render_template(
                 "driver/driver_signup.html",
                 error=f"Registration failed: {str(re)} (check terminal for details)",
@@ -261,10 +268,3 @@ def get_password_strength(password):
 
     return has_upper and has_lower and has_digit
     
-
-# Logout Route
-@auth_bp.route("/logout")
-@login_required
-def handle_logout():
-    logout_user()
-    return redirect(url_for("auth.handle_login")) 

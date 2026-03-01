@@ -1,7 +1,24 @@
 from models import db,Users,DriverProfile,DriverApplications,DriverPointsHistory,SponsorProfile
 from werkzeug.security import generate_password_hash
+from sqlalchemy.orm.exc import DetachedInstanceError
+from functools import wraps
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app
 
 # Universal ---------
+def role_required(*roles):
+    def wrapper(fn):
+        @wraps(fn)
+        @login_required
+        def decorated_view(*args, **kwargs):
+            print("Current user role:", current_user.role)
+            print("Allowed roles:", roles)
+            if current_user.role not in roles:
+                abort(403)
+            return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
 def generate_unique_username(email):
     base = email.split('@')[0]
     username = base
@@ -10,6 +27,13 @@ def generate_unique_username(email):
         username = f"{base}{counter}"
         counter += 1
     return username
+
+def validate_model(obj, model_name="Object"):
+    if obj is None:
+        raise ValueError(f"{model_name} not found.")
+    if obj not in db.session:
+        db.session.add(obj)
+    return obj
 
 # DRIVER ------------------
 def driver_create(
@@ -81,6 +105,8 @@ def driver_create(
 
         # Create points record
         if is_active:
+            # do not use driver_update_points
+            # as this is meant to be the intial record
             points_history = DriverPointsHistory(
                 driver_profile = new_user.driver_profile,
                 points_change = points_to_add,
@@ -96,25 +122,24 @@ def driver_create(
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Failed to create driver: {str(e)}") from e
-    
+
+
 def driver_update_points(
-    user_id: int,
+    driver_profile: DriverProfile,
     points_to_add = 0,
     points_reason = "None given",
     sponsor_user_id: int | None = None,
 ) -> DriverProfile:
     if points_to_add == 0:
         raise ValueError("No points to add (change is zero)")
-    
-    driver = DriverProfile.query.filter_by(user_id = user_id).first()
-    if not driver: 
-        raise ValueError(f"No driver found with user_id {user_id}")
+
     try:
-        current_points = driver.points or 0
-        new_total = current_points + points_to_add
+        driver_profile = validate_model(driver_profile)
+        
+        new_total = (driver_profile.points or 0) + points_to_add
 
         points_history = DriverPointsHistory(
-            user_id=driver.user_id,
+            driver_profile = driver_profile,
             points_change = points_to_add,
             current_points = new_total,
             reason = points_reason,
@@ -122,23 +147,22 @@ def driver_update_points(
         )
         db.session.add(points_history)
         db.session.commit()
-        db.session.refresh(driver)
-        return driver
+        db.session.refresh(driver_profile)
+        return driver_profile
     
+    except DetachedInstanceError:
+        db.session.rollback()
+        raise RuntimeError("Database error: Driver profile is detached from session.")
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Database error while updating points: {str(e)}") from e
 
 def driver_update_address(
-    user_id: int,
+    driver_profile:DriverProfile,
     streetname: str ,
     city: str,
     zipcode: str,
 ) -> DriverProfile:    
-    driver = DriverProfile.query.filter_by(user_id = user_id).first()
-    if not driver: 
-        raise ValueError(f"No driver found with user_id {user_id}")
-
     if not streetname.strip():
         raise ValueError("Street name cannot be empty")
     if not city.strip():
@@ -147,15 +171,19 @@ def driver_update_address(
         raise ValueError("Zip code cannot be empty")
     
     try:
-        driver.streetname = streetname.strip()
-        driver.city = city.strip()
-        driver.zipcode = zipcode.strip()
+        driver_profile = validate_model(driver_profile)
+
+        driver_profile.streetname = streetname.strip()
+        driver_profile.city = city.strip()
+        driver_profile.zipcode = zipcode.strip()
 
         db.session.commit()
-        db.session.refresh(driver)
+        db.session.refresh(driver_profile)
 
-        return driver
-
+        return driver_profile
+    except DetachedInstanceError:
+        db.session.rollback()
+        raise RuntimeError("Database error: Driver profile is detached from session.")
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Failed to update driver address: {str(e)}")

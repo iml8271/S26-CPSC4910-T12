@@ -5,23 +5,37 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-    <h1>Settings - Driver</h1>
-    <form id="driver-settings-address" method="POST"
-        action="{{ url_for('driver_settings') }}">
-    <h5>Personal Info.</h5>
-        <label for="streetname">Address:</label>
-        <input id="streetname"
-            type="text" name="streetname" placeholder="Street Name"
-            value="{{ driver.streetname }}"><br>
-        <input id="city"
-            type="text" name="city" placeholder="City"
-            value="{{ driver.city }}"><br>
-        <input id="zipcode"
-            type="text" name="zipcode" placeholder="Zipcode"
-            value="{{ driver.zipcode }}"><br>
-    <button type="submit">Update</button>
-    </form>
-    <br><br>
+<div class="container py-5">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="mb-4" style="color: #ff9800; font-weight: 700;">Settings - Driver ⚙️</h2>
+        
+        <form id="driver-settings-address" method="POST" action="{{ url_for('driver.driver_settings') }}">
+            <h5 class="mb-3" style="color: #795548; font-weight: 600;">📍 Personal Info & Address</h5>
+            
+            <div class="mb-3">
+                <label for="streetname" class="form-label" style="color: #5d4037; font-weight: 600;">Street Address</label>
+                <input id="streetname" type="text" name="streetname" class="form-control rounded-pill" 
+                       placeholder="123 Racing Lane" value="{{ driver.streetname }}">
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="city" class="form-label" style="color: #5d4037; font-weight: 600;">City</label>
+                    <input id="city" type="text" name="city" class="form-control rounded-pill" 
+                           placeholder="Speedway" value="{{ driver.city }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="zipcode" class="form-label" style="color: #5d4037; font-weight: 600;">Zipcode</label>
+                    <input id="zipcode" type="text" name="zipcode" class="form-control rounded-pill" 
+                           placeholder="12345" value="{{ driver.zipcode }}">
+                </div>
+            </div>
+
+            <div class="mt-4 d-grid">
+                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Update Profile</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

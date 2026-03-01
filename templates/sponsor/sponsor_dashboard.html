@@ -5,17 +5,61 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-<h1>Logged in as Sponsor {{ firstname }}!</h1>
-<a href="{{ url_for('sponsor_view_drivers') }}">My Drivers</a>
-<br><a href="{{ url_for('support.support_form') }}">Get Help Here!</a><br>
-    <br><a href="{{ url_for('support.user_view_requests') }}">View My Support Requests!</a><br>
-<br/>
-    <a href="{{ url_for('sponsor_catalog_editor') }}">Catalog Editors</a>
-<br>
-    <br>
-    <a href="{{ url_for('view_org_rules') }}">Organization Driving Rules</a>
-<br>
+<div class="container py-5">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="mb-4 text-center" style="color: #ff9800; font-weight: 700;">
+            Welcome, {{ firstname }}! 👋
+        </h2>
+        <p class="text-center text-muted mb-5">Sponsor Dashboard</p>
 
+        <div class="row text-center g-4">
+            
+            <div class="col-sm-6">
+                <a href="{{ url_for('sponsor.view_drivers') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 2rem;">🚚</span>
+                        <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">My Drivers</h5>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-sm-6">
+                <a href="{{ url_for('support.support_form') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 2rem;">💬</span>
+                        <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">Get Help</h5>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-sm-6">
+                <a href="{{ url_for('support.user_view_requests') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 2rem;">📋</span>
+                        <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">Support Requests</h5>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-sm-6">
+                <a href="{{ url_for('sponsor_catalog_editor') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 2rem;">🏷️</span>
+                        <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">Catalog Editors</h5>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="col-12">
+                <a href="{{ url_for('view_org_rules') }}" class="text-decoration-none">
+                    <div class="p-3 rounded-pill shadow-sm" style="background-color: #fff8e1; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <h6 class="mb-0" style="color: #795548; font-weight: 600;">📖 Organization Driving Rules</h6>
+                    </div>
+                </a>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash
+from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app,g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -9,15 +9,28 @@ from functools import wraps
 import csv
 import io
 from helpers import driver_create,driver_update_points,sponsor_create
+import os
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
-def get_sponsor_profile():
-    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if not sponsor_profile:
-        flash("Sponsor profile not found.")
-        return redirect(url_for("handle_logout"))
-    return sponsor_profile
+@sponsor_bp.before_request
+def restrict_to_sponsors():
+    # User has to be logged in
+    if not current_user.is_authenticated:
+        flash("Please log in to access this page.", "warning")
+        return redirect(url_for('auth.handle_login'))
+
+    # User has to be a sponsor
+    if current_user.role != "sponsor" and current_user.role != "admin":
+        flash("Access denied: Sponsors only.", "danger")
+        return redirect(url_for('auth.handle_login'))
+    if current_user.role == "admin":
+        return None
+    
+    # User has to have a profile
+    if not g.profile:
+        flash("Sponsor profile not found. Please contact an admin.", "danger")
+        return redirect(url_for('auth.logout'))
 
 # Roles
 def role_required(*roles):
@@ -33,78 +46,90 @@ def role_required(*roles):
         return decorated_view
     return wrapper
 
-@sponsor_bp.route("/driver_list/pending", methods=["GET","POST"])
-@login_required
-@role_required("sponsor")
-def pending_drivers():
-    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if not sponsor_profile:
-        return redirect(url_for("handle_logout"))
-    applicants = DriverApplications.query.filter_by(
-        company_id=sponsor_profile.company_id,
-        status="pending").all()
-    applicants_profiles = [app.driver_profile for app in applicants]
-    return render_template("sponsor/sponsor_pending_drivers.html",drivers=applicants_profiles)
+## SETTINGS ----------------------------------
+@sponsor_bp.route("/settings",methods=["GET","POST"])
+def sponsor_settings():
+    sponsor = g.profile
+    if request.method == "POST":
+        if "sponsor_logo" not in request.files:
+            flash("No file selected.")
+            return redirect(url_for("sponsor_settings"))
 
-@sponsor_bp.route("/driver_list/accept/<int:driver_id>", methods=["POST"])
-@login_required
-@role_required("sponsor")
-def driver_accept(driver_id):
-    try:
-        application = DriverApplications.query.filter_by(user_id=driver_id).first()
-        if application:
-            application.status = "accepted"
-            if application.driver_profile:
-                application.driver_profile.is_active = True
-            db.session.commit()
-            flash("Driver accepted!", "success")
-        else:
-            flash("Application not found.", "danger")
-    except Exception as e:
-        db.session.rollback()
-        print(f"Accept Error: {e}")
-        flash(f"Unable to accept Driver")
-    
-    return redirect(url_for("sponsor.pending_drivers"))
+        file = request.files["sponsor_logo"]
 
-@sponsor_bp.route("/driver_list/reject", methods=["POST"])
-@login_required
-@role_required("sponsor")
-def driver_reject():
-    driver_id= request.form.get("driver_id")
-    reason = request.form.get("reason").strip()
-    
-    try:
-        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        if file.filename == "":
+            flash("No file selected.")
+            return redirect(url_for("sponsor_settings"))
         
-        if application:
-            application.status = "rejected"
-            application.reason = reason
+        allowed_types = {"png","jpg","jpeg"}
+        extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
+
+        if extenstion in allowed_types:
+            filename = secure_filename(file.filename)
+
+            unique_filename = f"logo_co_{sponsor.company_id}_{filename}"
+            upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
+            os.makedirs(upload_path, exist_ok=True)
+
+            save_path = os.path.join(upload_path, unique_filename)
+            file.save(save_path)
+
+            if sponsor.company:
+                sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
+                db.session.commit()
+                flash("Logo uploaded successfully!", "success")
+            else:
+                flash("Error: No associated company found.", "danger")
             
-            if application.driver_profile:
-                application.driver_profile.is_active = False
-                
-            db.session.commit()
-            flash("Driver rejected.", "warning")
-            
-    except Exception as e:
+            return redirect(url_for("sponsor.sponsor_settings"))
+        else:
+            flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
+            return redirect(url_for("sponsor.sponsor_settings"))
+
+    return render_template("sponsor/sponsor_settings.html", sponsor=sponsor)
+
+## ACTIVE DRIVER_LIST --------------------------------
+@sponsor_bp.route("/driver_list", methods=["GET","POST"])
+def view_drivers():
+    drivers = DriverProfile.query.filter_by(
+        company_id=g.profile.company_id,
+        is_active=True
+    ).all()
+    return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
+
+@sponsor_bp.route("/adjust_points", methods=["POST"])
+def adjust_points(sponsor_profile,driver_id):
+    try:
+        sponsor_profile = g.profile
+        driver_profile = DriverProfile.query.filter_by(
+            user_id=driver_id,
+            company_id=sponsor_profile.company_id
+        ).first()
+        if not driver_profile:
+            flash("Error: Driver not found.")
+            return redirect(url_for("sponsor.view_drivers"))
+        
+        points_change = int(request.form.get("points_change"),0)
+        reason = request.form.get("reason","").strip()
+
+        driver_update_points(
+            driver_profile=driver_profile,
+            points_to_add = points_change,
+            points_reason = reason,
+            sponsor_user_id= sponsor_profile.user_id,
+        )
+        db.session.refresh(driver_profile)
+        flash(f"Successfully adjusted points for {driver_profile.firstname}!")
+    except Exception as e: 
         db.session.rollback()
-        flash("Unable to process rejection.", "danger")
+        print(f"Adjust Points Error: {e}")
+        flash(f"Unable to adjust points for Driver")
 
-    return redirect(url_for("sponsor.pending_drivers"))
-
-
-ALLOWED_EXTENSIONS = {'txt'}
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return redirect(url_for("sponsor.view_drivers"))
 
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
-@login_required
-@role_required("sponsor")
-def sponsor_add_drivers():
-    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    if not sponsor_profile:
-        return redirect(url_for("view_sponsor_dashboard"))
+def add_drivers():
+    sponsor_profile = g.profile
     
     company = sponsor_profile.company
     if not company:
@@ -127,7 +152,7 @@ def sponsor_add_drivers():
 
         # Clean the filename and check the extension
         filename = secure_filename(bulk_file.filename)
-        if not allowed_file(filename):
+        if not filename.lower().endswith('.txt'):
             flash('Invalid file type. Only .txt files are permitted.', 'danger')
             return redirect(request.url)
     
@@ -255,7 +280,7 @@ def sponsor_add_drivers():
                             # Case: Has User Profile & Driver Profile ->
                             # Update Points only
                             driver_update_points(
-                                user_id = driver_profile.user_id,
+                                driver_profile = driver_profile,
                                 points_to_add = points_field,
                                 points_reason = reason,
                                 sponsor_user_id= sponsor_profile.user_id,
@@ -299,3 +324,58 @@ def sponsor_add_drivers():
         processed=True  # A flag to show the results div
         )
     return render_template("sponsor/sponsor_add_drivers.html")
+
+## PENDING DRIVER_LIST ----------------------------------
+@sponsor_bp.route("/driver_list/pending", methods=["GET","POST"])
+def pending_drivers():
+    sponsor_profile = g.profile
+    applicants = DriverApplications.query.filter_by(
+        company_id=sponsor_profile.company_id,
+        status="pending").all()
+    applicants_profiles = [app.driver_profile for app in applicants]
+    return render_template("sponsor/sponsor_pending_drivers.html",drivers=applicants_profiles)
+
+@sponsor_bp.route("/driver_list/accept/<int:driver_id>", methods=["POST"])
+def driver_accept(driver_id):
+    try:
+        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        if application:
+            application.status = "accepted"
+            if application.driver_profile:
+                application.driver_profile.is_active = True
+            db.session.commit()
+            flash("Driver accepted!", "success")
+        else:
+            flash("Application not found.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Accept Error: {e}")
+        flash(f"Unable to accept Driver")
+    
+    return redirect(url_for("sponsor.pending_drivers"))
+
+@sponsor_bp.route("/driver_list/reject", methods=["POST"])
+def driver_reject():
+    driver_id= request.form.get("driver_id")
+    reason = request.form.get("reason").strip()
+    
+    try:
+        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        
+        if application:
+            application.status = "rejected"
+            application.reason = reason
+            
+            if application.driver_profile:
+                application.driver_profile.is_active = False
+                
+            db.session.commit()
+            flash("Driver rejected.", "warning")
+            
+    except Exception as e:
+        db.session.rollback()
+        flash("Unable to process rejection.", "danger")
+
+    return redirect(url_for("sponsor.pending_drivers"))
+
+

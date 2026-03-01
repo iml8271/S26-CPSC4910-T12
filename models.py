@@ -24,6 +24,8 @@ class Users(UserMixin, db.Model):
         cascade="all,delete-orphan",lazy="joined")
     sponsor_profile = db.relationship("SponsorProfile",back_populates="user",uselist=False,
         cascade="all,delete-orphan",lazy="joined")
+    admin_profile = db.relationship("AdminProfile",back_populates="user",uselist=False,
+        cascade="all,delete-orphan",lazy="joined")
     
 class PasswordChanges(db.Model):
     __tablename__ = "password_changes"
@@ -173,3 +175,15 @@ class SupportRequest(db.Model):
     req_details = db.Column(db.String(10000), nullable = False)
     creation_date = db.Column(db.DateTime, nullable = False, default=datetime.now)
     status = db.Column(db.String(20), nullable=False, default="Open")
+
+## ADMIN -----------------------
+class AdminProfile(db.Model):
+    __tablename__ = "admin_profile"
+
+    # User ID
+    user = db.relationship("Users",back_populates="admin_profile")
+    user_id = db.Column(db.Integer,db.ForeignKey('users.id'),primary_key=True,unique=True,nullable=False)
+
+    # Personal Details
+    firstname = db.Column(db.String(250), nullable=False)
+    lastname = db.Column(db.String(250), nullable=False)

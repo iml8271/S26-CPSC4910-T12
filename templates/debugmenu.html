@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Debug Menu</title>
+{% endblock %}
+
+{% block body %}
+<div class="center-body-div">
+    <h2>Debug Menu</h2>
+    <br><br>
+    <a href="{{ url_for('auth.handle_driver_signup') }}" >Driver Signup</a>
+    <br><br>
+    <a href="{{ url_for('auth.handle_sponsor_signup') }}">Sponsor Signup</a>
+    <br><br>
+    <a href="{{ url_for('auth.handle_signup') }}">Sign up Admin!</a>
+    <br><br>
+    <a href="{{ url_for('debug_driver_login') }}">
+        LOGIN : DRIVER
+    </a>
+    <br><br>
+    <a href="{{ url_for('debug_sponsor_login') }}">
+        SPONSOR: LOGIN
+    </a> <br><br>
+    <a href="{{ url_for('debug_admin_login') }}">
+        ADMIN : LOGIN
+    </a>
+</div>
+{% endblock %}
