@@ -26,7 +26,7 @@
 </table><br>
 
 
-<br><p>Bad Driving Behaviors</p>
+<br><p>bad Driving Behaviors</p>
 <table>
     <thead>
         <tr>
@@ -44,15 +44,4 @@
     </tbody>
 </table><br><br>
 
-<a href="{{ url_for('new_rule') }}">Add a New Rule!</a><br>
-<br>
-
-<br><p>Remove a Rule from your organiztion:</p>
-<form action="{{ url_for('delete_rule') }}" method="POST">
-    <label for="rr_target">Enter rule ID number:</label>
-    <input type="text" id="rr_target" name="rr_target"><br>
-    <br>
-    <button type="submit"> remove rule</button>
-
-</form>
 {%endblock%}

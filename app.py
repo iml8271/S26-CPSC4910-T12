@@ -178,13 +178,24 @@ def admin_sponsor_list():
     return render_template("admin/admin_sponsor_list.html",sponsors=sponsors)
 
 
-@app.route("/support/organization/rules", methods=["GET"])
+@app.route("/sponsor/organization/rules", methods=["GET"])
 def view_org_rules():
     profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
     sourceORG = profile.company_id
     good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
     bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
     return render_template("/sponsor/sponsor_view_rules.html", request1 = good_request, request2 = bad_request)
+
+@app.route("/sponsor/organization/rules", methods=["POST"])
+def delete_rule():
+    #get the right rule
+    id = request.form.get("rr_target")
+    rule = SponsorCompanyRules.query.get(id)
+    #delete the rule
+    db.session.delete(rule)
+    db.session.commit()
+    return redirect(url_for("view_org_rules"))
+
 
 @app.route("/sponsor/organization/rules/new_rule")
 def new_rule():
@@ -270,8 +281,23 @@ def sponsor_catalog_delete(item_index):
         flash("Item deleted successfully yay!")
     return redirect(url_for("sponsor_catalog_editor"))
 
+@app.route("/sponsor/reports/points",methods=["GET"])
+@login_required
+def points_report():
+    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    target_id = profile.company_id
+    request = db.session.query(DriverPointsHistory).join(SponsorProfile).filter(SponsorProfile.company_id == target_id).all()
+    return render_template("admin/reports/admin_points_report.html", history = request)
+
 # ------- Driver Speficics ------------------
 
+@app.route("/driver/organization/rules", methods=["GET"])
+def driver_view_org_rules():
+    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
+    sourceORG = profile.company_id
+    good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
+    bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
+    return render_template("/driver/driver_view_rules.html", request1 = good_request, request2 = bad_request)
 
 # ------------ Protected dashboard Route --------------
 @app.route("/admin/dashboard")

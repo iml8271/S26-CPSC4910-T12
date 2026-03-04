@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block head %}
+    
+{% endblock %}
+{% block body %}
+
+<div class="container">
+    <div class="header">
+        <h2>Driver Points Ledger</h2>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Driver ID</th>
+                <th>Update Date</th>
+                <th>Reason</th>
+                <th>Change</th>
+                <th>New Balance</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in history %}
+            <tr>
+                <td class="driver-id">#{{ entry.user_id }}</td>
+                <td>
+                    <span class="date-sub">{{ entry.update_date.strftime('%Y-%m-%d') }}</span>
+                    <small style="color:#999">{{ entry.update_date.strftime('%H:%M') }}</small>
+                </td>
+                <td>{{ entry.reason }}</td>
+                <td>
+                    <span class="points-pill {{ 'gain' if entry.points_change >= 0 else 'loss' }}">
+                        {{ "+" if entry.points_change > 0 }}{{ entry.points_change }}
+                    </span>
+                </td>
+                <td><strong>{{ entry.current_points }}</strong></td>
+            </tr>
+
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{%endblock%}
