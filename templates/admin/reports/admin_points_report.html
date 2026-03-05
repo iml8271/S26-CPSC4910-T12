@@ -13,6 +13,9 @@
         <thead>
             <tr>
                 <th>Driver ID</th>
+                <th>Driver First Name</th>
+                <th>Driver Last Name</th>
+                <th>Organization</th>
                 <th>Update Date</th>
                 <th>Reason</th>
                 <th>Change</th>
@@ -24,6 +27,9 @@
             {% for entry in history %}
             <tr>
                 <td class="driver-id">#{{ entry.user_id }}</td>
+                <td class="driver first name">#{{ entry.driver_profile.firstname }}</td>
+                <td class="driver last name">#{{ entry.driver_profile.lastname }}</td>
+                <td class="organization">#{{ entry.driver_profile.company }}</td>
                 <td>
                     <span class="date-sub">{{ entry.update_date.strftime('%Y-%m-%d') }}</span>
                     <small style="color:#999">{{ entry.update_date.strftime('%H:%M') }}</small>

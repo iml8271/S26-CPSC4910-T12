@@ -38,8 +38,11 @@ def driver_report():
 
     return render_template("admin/reports/admin_reports_drivers.html", tallies=tallied_requests)
 
-@report_bp.route("/reports/points",methods=["GET"])
+@report_bp.route("/reports/points", methods=["GET"])
 @login_required
 def points_report():
-    request = db.session.query(DriverPointsHistory)
-    return render_template("admin/reports/admin_points_report.html", history = request)
+    request = db.session.query(DriverPointsHistory) \
+        .join(DriverProfile) \
+        .all()
+
+    return render_template("admin/reports/admin_points_report.html", history=request)
