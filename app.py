@@ -342,11 +342,6 @@ def driver_order_history():
     ]
     return render_template("driver/driver_order_history.html", items=items)
 
-@app.route("/driver/dashboard/driver_faq")
-@login_required
-def driver_faq():
-    return render_template("driver/driver_faq.html")
-
 @app.route("/driver/dashboard/driver_points_review")
 @login_required
 def driver_points_review():

@@ -62,3 +62,13 @@ def driver_settings():
         flash("Address updated successfully.")
         return redirect(url_for("driver.driver_settings"), driver=driver,username=current_user.username)
     return render_template("driver/driver_settings.html", driver=driver,username=current_user.username)
+
+
+@driver_bp.route("/driver_faq")
+def faq():
+    return render_template("driver/driver_faq.html")
+
+
+@driver_bp.route("/my-sponsor", methods=["GET"])
+def mysponsor():
+     return render_template("driver/driver_mysponsor.html",profile=g.profile,company=g.profile.company.name)

@@ -5,47 +5,77 @@
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-    <h2>Signup Page - Driver</h2>
-    <h3> Create an Account</h3>
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh; padding: 40px 0;">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 550px; width: 100%; border-top: 5px solid #ff9800 !important;">
+
+    <div class="mb-3">
+            <a href="{{ url_for('auth.handle_login') }}" class="text-decoration-none" style="color: #a1887f; font-weight: 600;">
+                ← Back to Login
+            </a>
+    </div>
+
+    <h2 class="text-center" style="color: #ff9800; font-weight: 700;">Join the Crew! 🏎️</h2>
+    <p class="text-center text-muted mb-4">Create your account to get started</p>
+
     <form id="signup-form" method="POST"
         action="{{ url_for('auth.handle_driver_signup') }}">
         <h5>Personal Info.</h5>
-        <label for="firstname">First Name:</label>
-        <input id="firstname"
-            type="text" name="firstname" placeholder="First Name"><br>
-        <label for="lastname">Last Name:</label>
-        <input id="lastname"
-            type="text" name="lastname" placeholder="Last Name"><br>
-        <label for="streetname">Address:</label>
-        <input id="streetname"
-            type="text" name="streetname" placeholder="Street Name"><br>
-        <input id="city"
-            type="text" name="city" placeholder="City"><br>
-        <input id="zipcode"
-            type="text" name="zipcode" placeholder="Zipcode"><br>
+        <div class="mb-3">
+                <label for="firstname" class="form-label" style="color: #5d4037; font-weight: 600;">Firstname</label>
+                <input id="firstname" type="text" name="firstname" class="form-control rounded-pill" placeholder="John" required>
+        </div>
+        <div class="mb-3">
+                <label for="lastname" class="form-label" style="color: #5d4037; font-weight: 600;">Lastname</label>
+                <input id="lastname" type="text" name="lastname" class="form-control rounded-pill" placeholder="Johnna" required>
+        </div>
+        <div class="mb-3">
+                <label for="steertame" class="form-label" style="color: #5d4037; font-weight: 600;">Streetname</label>
+                <input id="streetname" type="text" name="streetname" class="form-control rounded-pill" placeholder="123 Seasme Street" required>
+        </div>
+        <div class="mb-3">
+                <label for="city" class="form-label" style="color: #5d4037; font-weight: 600;">City</label>
+                <input id="city" type="text" name="city" class="form-control rounded-pill" placeholder="Clemson" required>
+        </div>
+        <div class="mb-3">
+                <label for="zipcode" class="form-label" style="color: #5d4037; font-weight: 600;">Zipcode</label>
+                <input id="zipcode" type="text" name="zipcode" class="form-control rounded-pill" placeholder="29631" required>
+        </div>
         
         <h5>Portal Info</h5>
-        <label for="username">Username:</label>
-        <input id="username"
-            type="text" name="username" placeholder="Username"><br>
-        <label for="password">Password:</label>
-        <input id="password"
-            type="text" name="password" placeholder="Password" required><br>
-            <p>Minimum: 8 characters, 1 uppercase, 1 lowercase, and 1 digit (0-9)</p>
-        <label for="email">Email:</label>
-        <input id="email"
-            type="text" name="email" placeholder="Email" required><br>    
-        
-        <label for="company">Select Sponsor Company:</label>
-        <select name="company_id" id="company" required>
-            {% for company in companies %}
-                <option value="{{ company.id }}">{{ company.name }}</option>
-            {% endfor %}
-        </select>
-        <br>
-        <button type="submit">Sign Up</button>
+        <div class="mb-3">
+                <label for="username" class="form-label" style="color: #5d4037; font-weight: 600;">Username</label>
+                <input id="username" type="text" name="username" class="form-control rounded-pill" placeholder="Choose a username" required>
+        </div>
+        <div class="mb-3">
+                <label for="email" class="form-label" style="color: #5d4037; font-weight: 600;">Email Address</label>
+                <input id="email" type="email" name="email" class="form-control rounded-pill" placeholder="name@example.com" required>
+        </div>
+        <div class="mb-3">
+                <label for="password" class="form-label" style="color: #5d4037; font-weight: 600;">Password</label>
+                <input id="password" type="password" name="password" class="form-control rounded-pill" placeholder="Create a strong password" required>
+                <div class="form-text mt-2" style="font-size: 0.8rem; color: #795548;">
+                    Min: 8 chars, 1 uppercase, 1 lowercase, 1 digit.
+                </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="company" class="form-label" style="color: #5d4037; font-weight: 600;">Sponsor Company</label>
+            <select name="company_id" id="sponsor" class="form-select rounded-pill" style="cursor: pointer;" required>
+                {% for company in companies %}
+                    <option value="{{ company.id }}">{{ company.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="d-grid">
+                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Sign Up</button>
+        </div>
     </form>
-    {% if error %} <p class="error"> {{ error }}</p> {% endif %}
+    {% if error %}
+        <div class="alert alert-danger mt-4 rounded-pill text-center" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+    </div>
 </div>
 {% endblock %}

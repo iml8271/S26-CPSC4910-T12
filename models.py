@@ -110,6 +110,7 @@ class DriverPointsHistory(db.Model):
     # User ID
     driver_profile = db.relationship("DriverProfile",back_populates="driver_points_history")
     user_id = db.Column(db.Integer,db.ForeignKey('driver_profile.user_id'),nullable=False)
+    
 
     # Points History
     points_change = db.Column(db.Integer,nullable=False,server_default="0")
@@ -120,6 +121,9 @@ class DriverPointsHistory(db.Model):
     # Sponsor Records
     sponsor_user = db.relationship("SponsorProfile")
     sponsor_user_id = db.Column(db.Integer,db.ForeignKey("sponsor_profile.user_id"),nullable=True)      
+
+    company_id = db.Column(db.Integer, db.ForeignKey('sponsor_companies.id'), nullable=False)
+    company = db.relationship("SponsorCompany")
 
 
 ## SPONSOR -----

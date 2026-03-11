@@ -63,6 +63,15 @@
             </div>
 
             <div class="col-sm-6">
+                <a href="{{ url_for('driver.mysponsor') }}" class="text-decoration-none">
+                    <div class="p-3 rounded-4 shadow-sm h-100" style="background-color: white; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 1.5rem;">🏢</span>
+                        <h6 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">My Sponsor</h6>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-sm-6">
                 <a href="{{ url_for('driver_view_org_rules') }}" class="text-decoration-none">
                     <div class="p-3 rounded-4 shadow-sm h-100" style="background-color: white; border: 1px solid #ffe0b2; transition: all 0.3s;">
                         <span style="font-size: 1.5rem;">💬</span>
@@ -81,7 +90,7 @@
             </div>
             
             <div class="col-12 mt-4">
-                <a href="{{ url_for('driver_faq') }}" class="text-decoration-none" style="color: #795548; font-weight: 600;">
+                <a href="{{ url_for('driver.faq') }}" class="text-decoration-none" style="color: #795548; font-weight: 600;">
                     <i class="bi bi-question-circle"></i> Frequently Asked Questions
                 </a>
             </div>
