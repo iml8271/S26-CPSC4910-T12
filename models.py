@@ -84,6 +84,14 @@ class DriverProfile(db.Model):
         if self.driver_points_history:
             return self.driver_points_history[0].current_points 
         return 0
+
+class Driver_Org_RelationShip(db.Model):
+    __tablename__ = "driver_Org_RelationShip"
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
+    company = db.Column(db.String(150), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey("sponsor_companies.id"), nullable=False)
+    isActive = db.Column(db.Boolean, default=False, nullable=False)
+
     
 class DriverApplications(db.Model):
     __tablename__ = "driver_applications"

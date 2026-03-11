@@ -3,7 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
-from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverPointsHistory, DriverApplications
+from models import db, Users, DriverProfile, SponsorCompany, SponsorProfile, DriverPointsHistory, DriverApplications, \
+    Driver_Org_RelationShip
 from datetime import datetime
 from functools import wraps
 import csv
@@ -68,7 +69,23 @@ def driver_settings():
 def faq():
     return render_template("driver/driver_faq.html")
 
+@driver_bp.route("/company_application", methods=["GET","POST"])
+def company_application():
+    compID = request.form.get("company_id")
+    companytarget = SponsorCompany.query.filter_by(id=compID).first()
+    application = DriverApplications(
+        user_id=current_user.id,
+        company_id=companytarget.id,  # Use the ID (Integer)
+        company=companytarget.name,
+        status='pending',
+        reason=''
+    )
+    db.session.add(application)
+    db.session.commit()
+
 
 @driver_bp.route("/my-sponsor", methods=["GET"])
 def mysponsor():
-     return render_template("driver/driver_mysponsor.html",profile=g.profile,company=g.profile.company.name)
+    member = Driver_Org_RelationShip.query.filter_by(user_id=current_user.id).all()
+    request = SponsorCompany.query.all()
+    return render_template("driver/driver_mysponsor.html",profile=g.profile,company=g.profile.company.name, companies = request, member = member)
