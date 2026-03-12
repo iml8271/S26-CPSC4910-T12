@@ -42,6 +42,17 @@
 <form action="{{ url_for('support.admin_view_requests_open') }}" method="GET">
     <button type="submit">View Open Requests Only</button>
 </form>
+
+<form action="{{ url_for('support.admin_view_requests_prevDays') }}" method="GET">
+    <label for="prevDays"> Get requests from the past X days only: </label>
+    <select name="prevDays" id="prevDays">
+        <option value="7">7</option>
+        <option value="14">14</option>
+        <option value="30">30</option>
+    </select>
+    <button type="submit">Filter Requests</button>
+</form>
+
 <div style="margin-top: 20px; display: flex; gap: 10px;">
     <form action="{{ url_for('support.admin_view_sponsor') }}" method="GET">
     <label for="org">View Org Queue: </label>

@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 supp_bp = Blueprint("support",__name__)
@@ -33,6 +33,17 @@ def admin_view_requests():
     all_requests = SupportRequest.query.order_by(SupportRequest.creation_date.desc()).all()
 
     return render_template('support/admin_supp_req_view.html', requests=all_requests)
+
+@supp_bp.route('/admin/requests/time', methods=['GET'])
+@login_required
+def admin_view_requests_prevDays():
+    timeframe = request.args.get('prevDays', default=7, type=int)
+    cutoff_date = datetime.utcnow() - timedelta(days=int(timeframe))
+
+    filtered_requests = (SupportRequest.query.filter(SupportRequest.creation_date >= cutoff_date)
+                         .order_by(SupportRequest.creation_date.desc()).all())
+
+    return render_template('support/admin_supp_req_view.html', requests=filtered_requests)
 
 @supp_bp.route('/admin/requests/open', methods=['GET'])
 @login_required
