@@ -35,17 +35,11 @@
                                 <ul class="dropdown-menu" aria-labelledby="driversDropdown">
                                     <li><a class="dropdown-item" href="{{ url_for('driver_points_review') }}">Points Review</a>
                                     <li><a class="dropdown-item" href="{{ url_for('driver_order_history') }}">Order History</a>
+                                    <li><a class="dropdown-item" href="{{ url_for('support.user_view_requests') }}">Support</a>
                                 </ul>
                             </li>
-                            <!-- Mini Dropdown Menu help coded by AI-->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="mysponsorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    My Sponsor
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="mysponsorDropdown">
-                                    <li><a class="dropdown-item" href="{{ url_for('driver.mysponsor') }}">Details</a>
-                                    <li><a class="dropdown-item" href="{{ url_for('driver_catalog') }}">Catalog</a>
-                                </ul>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('driver.mysponsors') }}">My Sponsors</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('driver.faq') }}">Frequently Asked Questions</a>

@@ -108,8 +108,9 @@ def about():
 @login_required
 def dashboard():
     if current_user.role == "driver":
-        points = g.profile.points if profile else 0
-        return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=g.profile)
+        active_links = [link for link in g.profile.company_links if link.is_active]
+        return render_template(
+            "driver/driver_dashboard.html", username=current_user.username,links=active_links,profile=g.profile)
     elif current_user.role == "sponsor":
         return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=g.profile.firstname)
     elif current_user.role == "admin":
@@ -395,7 +396,13 @@ def add_shipping_info():
     db.session.add(new_address)
 
 
-
+@app.route("/company/view/<int:company_id>")
+@login_required
+def view_company_profile(company_id):
+    # Fetch the company or return a 404 if it doesn't exist
+    company = SponsorCompany.query.get_or_404(company_id)
+    
+    return render_template("company/company_viewcard.html", company=company)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)

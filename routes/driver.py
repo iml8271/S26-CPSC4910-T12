@@ -69,6 +69,44 @@ def faq():
     return render_template("driver/driver_faq.html")
 
 
-@driver_bp.route("/my-sponsor", methods=["GET"])
-def mysponsor():
-     return render_template("driver/driver_mysponsor.html",profile=g.profile,company=g.profile.company.name)
+@driver_bp.route("/my_sponsors", methods=["GET"])
+def mysponsors():
+     active_links = [link for link in g.profile.company_links if link.is_active]
+     return render_template("driver/driver_mysponsors.html",profile=g.profile,links=active_links)
+
+@driver_bp.route("/my_sponsors/status", methods=["GET"])
+def mysponsors_status():
+    all_companies = SponsorCompany.query.all()
+    active_links = {link.company_id: link for link in g.profile.company_links if link.is_active}
+    
+    # Map of Company ID -> Status (for non-active links)
+    apps = DriverApplications.query.filter_by(user_id=g.profile.user_id).all()
+    app_statuses = {app.company_id: app.status for app in apps}
+
+    return render_template(
+        "driver/driver_mysponsors_status.html",
+        companies=all_companies,
+        active_links=active_links,
+        app_statuses=app_statuses
+    )
+
+@driver_bp.route("/my_sponsors/apply/<int:company_id>", methods=["POST"])
+def mysponsors_apply(company_id):
+    existing = DriverApplications.query.filter_by(
+        user_id=g.profile.user_id, 
+        company_id=company_id
+    ).first()
+
+    if not existing:
+        new_app = DriverApplications(
+            user_id=g.profile.user_id,
+            company_id=company_id,
+            status="pending"
+        )
+        db.session.add(new_app)
+        db.session.commit()
+        flash("Application submitted successfully!")
+    else:
+        flash("You already have an application for this company.")
+
+    return redirect(url_for('driver.mysponsors_status'))
