@@ -2,7 +2,7 @@ from email.policy import default
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from sqlalchemy import select,desc
+from sqlalchemy import select,desc, event
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime
 
@@ -67,23 +67,12 @@ class DriverProfile(db.Model):
     city = db.Column(db.String(250))
     zipcode = db.Column(db.String(10))
 
-    # Sponsor
-    company = db.relationship("SponsorCompany",back_populates="drivers")
-    company_id = db.Column(db.Integer,db.ForeignKey("sponsor_companies.id"),nullable=False)
-
     # Status
     is_active = db.Column(db.Boolean, default=False, nullable=False, index=True)
 
-    #points
-    driver_points_history = db.relationship("DriverPointsHistory"
-                            ,back_populates="driver_profile"
-                            ,order_by="desc(DriverPointsHistory.update_date)"
-                            ,lazy="joined")
-    @hybrid_property
-    def points(self):
-        if self.driver_points_history:
-            return self.driver_points_history[0].current_points 
-        return 0
+    # Sponsor Relationships
+    company_links = db.relationship("DriverCompanyLink"
+                                  ,back_populates="driver_profile")
 
 class Driver_Org_RelationShip(db.Model):
     __tablename__ = "driver_Org_RelationShip"
@@ -95,30 +84,57 @@ class Driver_Org_RelationShip(db.Model):
     
 class DriverApplications(db.Model):
     __tablename__ = "driver_applications"
+    id = db.Column(db.Integer, primary_key=True)
 
     # User ID
     driver_profile = db.relationship("DriverProfile")
-    user_id = db.Column(db.Integer,db.ForeignKey('driver_profile.user_id'),primary_key=True,unique=True,nullable=False)
+    user_id = db.Column(db.Integer,db.ForeignKey('driver_profile.user_id'),nullable=False)
+
+    # Application Date
+    app_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     # Sponsor
     company = db.relationship("SponsorCompany")
-    company_id = db.Column(db.Integer,db.ForeignKey("sponsor_companies.id"),nullable=False)
+    company_id = db.Column(db.Integer,db.ForeignKey("sponsor_companies.id"),nullable=True)
 
     # Status 
-    status = db.Column(db.String(10), nullable=False)
+    status = db.Column(db.String(10), nullable=False,default = "pending")  # 'pending', 'accepted', 'rejected'
 
-    # Reason
-    reason = db.Column(db.String(250), nullable=True)
+    # Reason for status
+    status_reason = db.Column(db.String(250), nullable=True)
 
+    # Response Date
+    status_date = db.Column(db.DateTime, nullable=True)
+
+
+class DriverCompanyLink (db.Model):
+    __tablename__ = "driver_company_link"
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Driver
+    driver_profile = db.relationship("DriverProfile",back_populates="company_links")
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver_profile.user_id'), nullable=False,index=True)
+
+    # Sponsor Company
+    company = db.relationship("SponsorCompany",back_populates="driver_links")
+    company_id = db.Column(db.Integer, db.ForeignKey('sponsor_companies.id'), nullable=False,index=True)
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    status_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    # Points
+    point_history = db.relationship("DriverPointsHistory"
+                            ,backref="link"
+                            ,lazy="dynamic")
+    current_points = db.Column(db.Integer,default=0, nullable=False)
     
 class DriverPointsHistory(db.Model):
     __tablename__ = "driver_points_history"
     id = db.Column(db.Integer, primary_key=True)
 
-    # User ID
-    driver_profile = db.relationship("DriverProfile",back_populates="driver_points_history")
-    user_id = db.Column(db.Integer,db.ForeignKey('driver_profile.user_id'),nullable=False)
-    
+    # Driver/SponsorCompany Relationship
+    link_id = db.Column(db.Integer, db.ForeignKey('driver_company_link.id'), nullable=False)
 
     # Points History
     points_change = db.Column(db.Integer,nullable=False,server_default="0")
@@ -130,9 +146,19 @@ class DriverPointsHistory(db.Model):
     sponsor_user = db.relationship("SponsorProfile")
     sponsor_user_id = db.Column(db.Integer,db.ForeignKey("sponsor_profile.user_id"),nullable=True)      
 
-    company_id = db.Column(db.Integer, db.ForeignKey('sponsor_companies.id'), nullable=False)
-    company = db.relationship("SponsorCompany")
+@event.listens_for(DriverPointsHistory, 'after_insert')
+def update_link_points(mapper, connection, target):
+    # Everytime a record is added, update link's points
 
+    # Target is new DriverPointsHistory object
+    link_table = DriverCompanyLink.__table__
+    
+    # Direct SQL update
+    connection.execute(
+        link_table.update()
+        .where(link_table.c.id == target.link_id)
+        .values(current_points=link_table.c.current_points + target.points_change)
+    )
 
 ## SPONSOR -----
 class SponsorProfile(db.Model):
@@ -157,10 +183,12 @@ class SponsorCompany(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False,index=True)
     phone = db.Column(db.String(50), nullable=False)
     logo_filename = db.Column(db.String(255), nullable=True)
+    brand_color = db.Column(db.String(255), nullable=True)
+    points_conversion = db.Column(db.DECIMAL(10,2),nullable=False,default=1)
 
     # Employees
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
-    drivers = db.relationship("DriverProfile",back_populates="company")
+    driver_links = db.relationship("DriverCompanyLink", back_populates="company")
 
 class SponsorCompanyRules(db.Model):
     __tablename__ = "Sponsor_Org_Rules"

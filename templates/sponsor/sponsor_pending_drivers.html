@@ -11,33 +11,37 @@
     </h2>
     
     <div class="row">
-        {% for driver in drivers %}
-        <div class="col-md-4 mb-4">
-            <div class="driver-card h-100">
-                <div class="driver-card-body d-flex flex-column">
-                    <h3 class="driver-card-title text-center">{{ driver.firstname }} {{ driver.lastname }}</h3>
-                    
-                    <div class="mt-auto d-flex gap-2">
-                        <form action="{{ url_for('sponsor.driver_accept', driver_id=driver.user_id) }}" 
-                            method="POST" 
-                            class="flex-grow-1"
-                            onsubmit="return confirm('Are you sure you want to approve {{ driver.firstname }} {{ driver.lastname }}?');">
-                            <button type="submit" class="btn btn-custom rounded-pill w-100">
-                                Accept
-                            </button>
-                        </form>
+        {% for app in applications %}
+          {% set driver = app.driver_profile %} {# Convenience variable #}
+          <div class="col-md-4 mb-4">
+              <div class="driver-card h-100">
+                  <div class="driver-card-body d-flex flex-column">
+                      <h3 class="driver-card-title text-center">{{ driver.firstname }} {{ driver.lastname }}</h3>
+                      
+                      <p class="text-muted text-center small">Applied: {{ app.app_date.strftime('%Y-%m-%d') }}</p>
 
-                        <button type="button"
-                            class="btn btn-outline-danger rounded-pill flex-grow-1"
-                            data-bs-toggle="modal" 
-                            data-bs-target="#rejectModal"
-                            data-driverid="{{ driver.user_id }}" 
-                            data-drivername="{{ driver.firstname }} {{ driver.lastname }}"
-                        >Reject</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+                      <div class="mt-auto d-flex gap-2">
+                          <form action="{{ url_for('sponsor.process_application', app_id=app.id) }}" 
+                              method="POST" 
+                              class="flex-grow-1"
+                              onsubmit="return confirm('Are you sure you want to approve {{ driver.firstname }} {{ driver.lastname }}?');">
+                              <input type="hidden" name="action" value="accept">
+                              <button type="submit" class="btn btn-custom rounded-pill w-100">
+                                  Accept
+                              </button>
+                          </form>
+
+                          <button type="button"
+                              class="btn btn-outline-danger rounded-pill flex-grow-1"
+                              data-bs-toggle="modal" 
+                              data-bs-target="#rejectModal"
+                              data-appid="{{ app.id }}" 
+                              data-drivername="{{ driver.firstname }} {{ driver.lastname }}"
+                          >Reject</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
         {% else %}
         <div class="col-12 text-center py-5">
             <div class="card p-5 rounded-4 border-0 shadow-sm" style="background-color: #fffaf0;">
@@ -80,11 +84,11 @@
   const rejectModal = document.getElementById('rejectModal');
   rejectModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
-    const driverId = button.getAttribute('data-driverid');
-    const driverName = button.getAttribute('data-drivername');
-
-    document.getElementById('targetDriverId').value = driverId;
-    document.getElementById('targetDriverName').textContent = driverName;
+    const appId = button.getAttribute('data-appid')
+    const driverName = button.getAttribute('data-drivername')
+    
+    rejectModal.querySelector('.modal-title').textContent = 'Reject ' + driverName
+    rejectModal.querySelector('#rejectForm').action = '/sponsor/driver_list/applications/process/' + appId
   });
 </script>
 {% endblock %}

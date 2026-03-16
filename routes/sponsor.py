@@ -3,12 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
-from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverPointsHistory, DriverApplications
+from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverPointsHistory, DriverApplications, DriverCompanyLink
 from datetime import datetime
 from functools import wraps
 import csv
 import io
-from helpers import driver_create,driver_update_points,sponsor_create
+from helpers import *
 import os
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
@@ -91,9 +91,10 @@ def sponsor_settings():
 ## ACTIVE DRIVER_LIST --------------------------------
 @sponsor_bp.route("/driver_list", methods=["GET","POST"])
 def view_drivers():
-    drivers = DriverProfile.query.filter_by(
-        company_id=g.profile.company_id,
-        is_active=True
+    drivers = DriverProfile.query.join(DriverCompanyLink).filter(
+        DriverCompanyLink.company_id == g.profile.company_id,
+        DriverCompanyLink.is_active == True,
+        DriverProfile.is_active == True
     ).all()
     return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
 
@@ -101,25 +102,30 @@ def view_drivers():
 def adjust_points(sponsor_profile,driver_id):
     try:
         sponsor_profile = g.profile
-        driver_profile = DriverProfile.query.filter_by(
-            user_id=driver_id,
-            company_id=sponsor_profile.company_id
-        ).first()
+        driver_profile = DriverProfile.query.join(DriverCompanyLink).filter(
+            DriverProfile.user_id == driver_id,
+            DriverCompanyLink.company_id == sponsor_profile.company_id
+            ).first()
         if not driver_profile:
             flash("Error: Driver not found.")
             return redirect(url_for("sponsor.view_drivers"))
         
-        points_change = int(request.form.get("points_change"),0)
-        reason = request.form.get("reason","").strip()
+        raw_points = request.form.get("points_change", "0")
+        points_change = int(raw_points) if raw_points else 0
+        reason = request.form.get("reason","").strip() or "Manual adjustment by sponsor"
 
         driver_update_points(
             driver_profile=driver_profile,
+            company_id=sponsor_profile.company_id,
             points_to_add = points_change,
             points_reason = reason,
             sponsor_user_id= sponsor_profile.user_id,
         )
         db.session.refresh(driver_profile)
         flash(f"Successfully adjusted points for {driver_profile.firstname}!")
+    except ValueError as ve:
+        db.session.rollback()
+        flash(f"Update failed: {str(ve)}")
     except Exception as e: 
         db.session.rollback()
         print(f"Adjust Points Error: {e}")
@@ -326,19 +332,59 @@ def add_drivers():
     return render_template("sponsor/sponsor_add_drivers.html")
 
 ## PENDING DRIVER_LIST ----------------------------------
-@sponsor_bp.route("/driver_list/pending", methods=["GET","POST"])
+@sponsor_bp.route("/driver_list/applications/pending", methods=["GET","POST"])
 def pending_drivers():
     sponsor_profile = g.profile
-    applicants = DriverApplications.query.filter_by(
+    applications = DriverApplications.query.filter_by(
         company_id=sponsor_profile.company_id,
         status="pending").all()
-    applicants_profiles = [app.driver_profile for app in applicants]
-    return render_template("sponsor/sponsor_pending_drivers.html",drivers=applicants_profiles)
+    return render_template("sponsor/sponsor_pending_drivers.html",applications=applications)
 
-@sponsor_bp.route("/driver_list/accept/<int:driver_id>", methods=["POST"])
-def driver_accept(driver_id):
+@sponsor_bp.route("/driver_list/applications/process/<int:app_id>", methods=["POST"])
+def process_application(app_id):
+    application = DriverApplications.query.get_or_404(app_id)
+    action = request.form.get("action")
+
     try:
-        application = DriverApplications.query.filter_by(user_id=driver_id).first()
+        if action == "accept":
+            driver_accept_application(
+                driver_profile=application.driver_profile,
+                company_id=application.company_id,
+                sponsor_user_id=g.profile.user_id
+            )
+            flash("Driver accepted and linked successfully!")
+        
+        elif action == "reject":
+            reason = request.form.get("reason", "Processed by Sponsor")
+            driver_reject_application(
+                driver_profile=application.driver_profile,
+                company_id=application.company_id,
+                reason=reason
+            )
+            flash("Application rejected.")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error processing application: {str(e)}")
+
+    return redirect(url_for("sponsor.pending_drivers"))
+
+@sponsor_bp.route("/driver_list/accept/<int:app_id>", methods=["POST"])
+def driver_accept(app_id):
+    application = DriverApplications.query.get_or_404(app_id)
+    action = request.form.get("action")
+    reason = request.form.get("reason", "Processed by Sponsor")
+    try:
+        sponsor_profile = g.profile
+        reason = request.form.get("reason").strip() or "Sponsor Accepted"
+
+        if not application:
+            flash("Application not found.", "danger")
+        
+        application.status = "accepted"
+        application.status_reason = reason
+        application.response_date = datetime.now()
+        
         if application:
             application.status = "accepted"
             if application.driver_profile:
