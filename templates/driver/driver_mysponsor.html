@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>My Sponsor</title>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <p>My Active Sponsor:</p>
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        {% if profile and profile.company.logo_filename %}
+        <div class="text-center mb-4">
+            <img 
+                src="{{ url_for('static', filename=profile.company.logo_filename) }}"
+                alt="Company Logo"
+                class="img-fluid rounded"
+                style="max-width: 150px; height: auto;"
+            >
+        </div>
+        {% endif %}
+
+        <h2 class="text-center" style="color: #5d4037; font-weight: 700;">
+           {{ profile.company.name }}
+        </h2>
+        <p class="text-center mb-4">Phone: {{ profile.company.phone }}<br>Email: {{ profile.company.email }}</p>
+    </div>
+    <br>
+    <br><p>My Sponsor Memberships:</p>
+        <table class="table table-hover mb-0">
+            <thead style="background-color: #5d4037; color: white;">
+                <tr>
+                    <th scope="col" class="ps-4 py-3">Sponsor Name</th>
+                    <th scope="col" class="py-3 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white">
+
+                    {% for membership in member %}
+                    <tr>
+                        <td class="ps-4 py-3 align-middle" style="font-weight: 500; color: #5d4037;">
+                            {{ membership.company }}
+                        </td>
+                        <td class="py-3 text-center align-middle">
+                            <span class="badge rounded-pill {% if membership.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ membership.isActive }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+            </tbody>
+        </table>
+
+    <br>
+    <br><p>Apply to a new Organization</p><br>
+        <form action="{{ url_for('driver.company_application') }}" method="POST">
+            <label for="company" class="form-label" style="color: #5d4037; font-weight: 600;">Sponsor Company</label>
+            <select name="company_id" id="sponsor" class="form-select rounded-pill" style="cursor: pointer;" required>
+                {% for company in companies %}
+                    <option value="{{ company.id }}">{{ company.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Submit</button></form>
+        </form>
+</div>
+{% endblock %}

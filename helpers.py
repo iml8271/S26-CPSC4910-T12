@@ -1,4 +1,6 @@
-from models import *
+from __future__ import annotations
+
+from models import db,Users,DriverProfile,DriverApplications,DriverPointsHistory,SponsorProfile
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm.exc import DetachedInstanceError
 from functools import wraps

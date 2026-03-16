@@ -1,8 +1,11 @@
+from statistics import median
+
 from flask import Flask, render_template, request, redirect, url_for, session,abort,flash,g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
+import requests
 from functools import wraps
 from authentication import auth_bp
 from support import supp_bp
@@ -320,17 +323,45 @@ def view_driver_dashboard():
     return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=profile)
 
 
-
-@app.route("/driver/dashboard/driver_catalog")
+@app.route("/driver/dashboard/driver_catalog", methods=["GET"])
 @login_required
 def driver_catalog():
     #we can remove these after we make a catalog for sponors
-    items = [
-        {"name": "Jar Of Dirt", "price": 1},
-        {"name": "CV Radio", "price": 1500},
-        {"name": "$50 Taco Bell Gift Card", "price": 3000},
-    ]
-    return render_template("driver/driver_catalog.html", items=items)
+
+    itunes_url = "https://itunes.apple.com/search"
+
+    params = {
+        "term": "Michael+Jackson",
+        "media": "all",
+        "limit": 50,
+        "explicit": "No"
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+
+    return render_template("driver/driver_catalog.html", items=data['results'])
+
+@app.route("/driver/dashboard/driver_catalog/search", methods=["GET", "POST"])
+@login_required
+def driver_catalog_search():
+    term = request.form.get("user_search")
+    term = term.replace(" ", "+")
+    mediaType = request.form.get("media_type")
+
+    itunes_url = "https://itunes.apple.com/search"
+
+    params = {
+        "term": term,
+        "media": mediaType,
+        "limit": 50,
+        "explicit": "No"
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+
+    return render_template("driver/driver_catalog.html", items=data['results'])
 
 @app.route("/driver/dashboard/driver_order_history")
 @login_required

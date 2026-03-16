@@ -9,15 +9,37 @@
 
   <p>Here's your Catalog {{ username }}</p><br>
   <p>Your current balance: {{ points }} points</p>
+    <form action="{{ url_for('driver_catalog_search') }}" method="POST">
+  <label for="user-search">Search For::</label>
+  <input type="text" id="user-search" name="user_search" placeholder="Type something..."><br>
+        <label for="media_type"> What kind of media do you want to search for? </label>
+    <select name="media_type" id="media_type">
+        <option value="music">music</option>
+        <option value="podcast">podcast</option>
+        <option value="movie">movie</option>
+        <option value="audiobook">audiobook</option>
+        <option value="all">all</option>
+    </select>
+
+  <button type="submit">Search</button></form>
+
   <p>Cart: <span id="cart-count">0</span> items</p>
 
   <div class="catalog">
     {% for item in items %}
       <div class="catalog-item">
-        <h3>{{ item.name }}</h3>
-        <p>Cost: {{ item.price }} points</p>
-        <button onclick="purchaseNow('{{ item.name }}', {{ item.price }})">Purchase Now</button>
-        <button onclick="addToCart('{{ item.name }}', {{ item.price }})">Add to Cart</button>
+        {# Display Artwork #}
+        <img src="{{ item.artworkUrl100 }}" alt="{{ item.trackName or item.collectionName }}">
+
+        <h3>{{ item.trackName or item.collectionName }}</h3>
+
+        <p><em>{{ item.primaryGenreName }}</em></p>
+
+        {% set price = item.trackPrice or item.collectionPrice or 0 %}
+        <p>Price: {{ price }} points</p>
+
+        <button onclick="purchaseNow('{{ item.trackName or item.collectionName }}', {{ price }})">Buy Now</button>
+        <button onclick="addToCart('{{ item.trackName or item.collectionName }}', {{ price }})">+ Cart</button>
       </div>
     {% endfor %}
   </div>
