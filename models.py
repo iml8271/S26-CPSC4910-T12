@@ -227,3 +227,35 @@ class AdminProfile(db.Model):
     # Personal Details
     firstname = db.Column(db.String(250), nullable=False)
     lastname = db.Column(db.String(250), nullable=False)
+
+##ORDERS-----------------------------
+class order(db.Model):
+    __tablename__ = "orders"
+
+    #basic info
+    order_id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    #source info
+    user_id = db.Column(db.Integer,db.ForeignKey('users.id'),nullable=False)
+    org_id = db.Column(db.Integer,db.ForeignKey('sponsor_companies.id'),nullable=False)
+
+    #order info
+    dollar_price = db.Column(db.DECIMAL(10,2),nullable=False)
+    point_price = db.Column(db.Integer ,nullable=False)
+
+class order_items(db.Model):
+    __tablename__ = "order_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # order information
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
+
+    # item information
+    product_name = db.Column(db.String(200), nullable=False)
+
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    unit_price_dollars = db.Column(db.DECIMAL(10, 2), nullable=False)
+    unit_price_points = db.Column(db.Integer, nullable=False)
+
