@@ -190,6 +190,10 @@ class SponsorCompany(db.Model):
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     driver_links = db.relationship("DriverCompanyLink", back_populates="company")
 
+    #catalog Rules
+    priceMax = db.Column(db.Integer, nullable=False, default=100)
+    explicit = db.Column(db.Boolean, nullable=False, default=True)
+
 class SponsorCompanyRules(db.Model):
     __tablename__ = "Sponsor_Org_Rules"
     #company and tracking info
@@ -229,7 +233,7 @@ class AdminProfile(db.Model):
     lastname = db.Column(db.String(250), nullable=False)
 
 ##ORDERS-----------------------------
-class order(db.Model):
+class Order(db.Model):
     __tablename__ = "orders"
 
     #basic info
@@ -244,7 +248,7 @@ class order(db.Model):
     dollar_price = db.Column(db.DECIMAL(10,2),nullable=False)
     point_price = db.Column(db.Integer ,nullable=False)
 
-class order_items(db.Model):
+class Order_Items(db.Model):
     __tablename__ = "order_items"
 
     id = db.Column(db.Integer, primary_key=True)

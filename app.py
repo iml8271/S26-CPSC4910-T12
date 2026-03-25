@@ -13,7 +13,8 @@ from reports import report_bp
 from routes.sponsor import sponsor_bp
 from routes.driver import driver_bp
 from routes.admin import admin_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, SponsorCompanyRules
+from models import db, Users, DriverProfile, SponsorProfile, DriverPointsHistory, SponsorCompany, SupportRequest, \
+    SponsorCompanyRules, DriverCompanyLink
 from datetime import datetime
 from flask_migrate import Migrate
 import os
@@ -327,14 +328,21 @@ def view_driver_dashboard():
 @login_required
 def driver_catalog():
     #we can remove these after we make a catalog for sponors
-
+    driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active = True).first()
+    company = SponsorCompany.query.filter_by(company_id=driver.company_id).first()
+    priceMax = company.priceMax
+    explicit = company.explicit
+    explicitVal = "No"
     itunes_url = "https://itunes.apple.com/search"
+    if explicit:
+        explicitVal = "Yes"
+
 
     params = {
         "term": "Michael+Jackson",
         "media": "all",
         "limit": 50,
-        "explicit": "No"
+        "explicit": explicitVal
     }
 
     results = requests.get(itunes_url, params=params)
@@ -348,7 +356,7 @@ def driver_catalog_search():
     term = request.form.get("user_search")
     term = term.replace(" ", "+")
     mediaType = request.form.get("media_type")
-
+    sortType = request.form.get("sort_type")
     itunes_url = "https://itunes.apple.com/search"
 
     params = {
@@ -360,8 +368,16 @@ def driver_catalog_search():
 
     results = requests.get(itunes_url, params=params)
     data = results.json()
+    items = data.get('results', [])
 
-    return render_template("driver/driver_catalog.html", items=data['results'])
+    if sortType == "Price (Asc)":
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)))
+    elif sortType == "Price (Desc)":
+        # Sort high to low
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)), reverse=True)
+
+
+    return render_template("driver/driver_catalog.html", items=items)
 
 @app.route("/driver/dashboard/driver_order_history")
 @login_required

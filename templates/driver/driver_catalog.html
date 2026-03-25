@@ -31,7 +31,7 @@
   <p>Here's your Catalog {{ username }}</p><br>
   <p>Your current balance: {{ points }} points</p>
     <form action="{{ url_for('driver_catalog_search') }}" method="POST">
-  <label for="user-search">Search For::</label>
+  <label for="user-search">Search For:</label>
   <input type="text" id="user-search" name="user_search" placeholder="Type something..."><br>
         <label for="media_type"> What kind of media do you want to search for? </label>
     <select name="media_type" id="media_type">
@@ -40,6 +40,12 @@
         <option value="movie">movie</option>
         <option value="audiobook">audiobook</option>
         <option value="all">all</option>
+    </select>
+      <label for="sort_type"> Sort: </label>
+    <select name="sort_type" id="sort_type">
+        <option value="Best Selling">Best Selling</option>
+        <option value="Price (Desc)">Price (Desc)</option>
+        <option value="Price (Asc)">Price (Asc)</option>
     </select>
 
   <button type="submit">Search</button></form>
