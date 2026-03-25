@@ -23,8 +23,8 @@
     <div class="orderedHistory">
         {% for entry in order_log %}
             <div class="orderedItem"
-                    data-name="{{ entry.name }}"
-                    data-price="{{ entry.points }}"
+                    data-name="{{ entry.id }}"
+                    data-price="{{ entry.point_price }}"
                     data-date="{{ entry.date }}">
 
                 <p>Item: {{ entry.name }}</p>

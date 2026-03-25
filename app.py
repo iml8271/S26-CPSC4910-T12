@@ -14,9 +14,10 @@ from routes.sponsor import sponsor_bp
 from routes.driver import driver_bp
 from routes.admin import admin_bp
 from models import db, Users, DriverProfile, SponsorProfile, DriverPointsHistory, SponsorCompany, SupportRequest, \
-    SponsorCompanyRules, DriverCompanyLink
+    SponsorCompanyRules, DriverCompanyLink, Order_Items, Order
 from datetime import datetime
 from flask_migrate import Migrate
+from sqlalchemy import func
 import os
 
 
@@ -329,7 +330,7 @@ def view_driver_dashboard():
 def driver_catalog():
     #we can remove these after we make a catalog for sponors
     driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active = True).first()
-    company = SponsorCompany.query.filter_by(company_id=driver.company_id).first()
+    company = SponsorCompany.query.filter_by(id=driver.company_id).first()
     priceMax = company.priceMax
     explicit = company.explicit
     explicitVal = "No"
@@ -375,6 +376,13 @@ def driver_catalog_search():
     elif sortType == "Price (Desc)":
         # Sort high to low
         items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)), reverse=True)
+    elif sortType == "Best Selling":
+        sales_query = db.session.query(Order_Items.product_name, func.sum(Order_Items.quantity).label('total_sold')).group_by(Order_Items.product_name).all()
+
+        sales_map = {name: total for name, total in sales_query}
+        items = sorted(items,
+            key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
+            reverse=True)
 
 
     return render_template("driver/driver_catalog.html", items=items)
@@ -382,13 +390,8 @@ def driver_catalog_search():
 @app.route("/driver/dashboard/driver_order_history")
 @login_required
 def driver_order_history():
-    #we can remove these after we update database
-    items = [
-        {"name": "Jar Of Dirt", "price": 1, "date": "02/09/26"},
-        {"name": "CV Radio", "price": 1500, "date": "06/21/87"},
-        {"name": "$50 Taco Bell Gift Card", "price": 3000, "date": "09/01/20"},
-    ]
-    return render_template("driver/driver_order_history.html", items=items)
+    items = Order.query.join(SponsorCompany).all()
+    return render_template("driver/driver_order_history.html", order_log=items)
 
 @app.route("/driver/dashboard/driver_points_review")
 @login_required
