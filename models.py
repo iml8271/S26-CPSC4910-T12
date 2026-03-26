@@ -227,3 +227,55 @@ class AdminProfile(db.Model):
     # Personal Details
     firstname = db.Column(db.String(250), nullable=False)
     lastname = db.Column(db.String(250), nullable=False)
+
+
+## Invoices
+class Invoice(db.Model):
+    __tablename__ = "invoices"
+    id = db.Column(db.Integer, primary_key=True)
+
+    #Sponsor Company
+    company_id = db.Column(db.Integer, db.ForeignKey("sponsor_companies.id"), nullable=False)
+    company = db.relationship("SponsorCompany")
+
+    #date Range
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    #point/amount totals
+    total_points = db.Column(db.Integer, nullable=False, default=0)
+    total_amount = db.Column(db.DECIMAL(10,2), nullable=False, default=0.00)
+
+    #Admin who created it
+    created_by = db.Column(db.Integer, db.ForeignKey("admin_profile.user_id"), nullable=False)
+    created_by_admin = db.relationship("AdminProfile")
+    created_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    #Notes
+    notes = db.Column(db.String(500), nullable=True)
+
+    #line Items
+    items = db.relationship("InvoiceItem", back_populates="invoice", cascade="all,delete-orphan")
+
+
+class InvoiceItem(db.Model):
+    __tablename__ = "invoice_items"
+    id = db.Column(db.Integer, primary_key=True)
+
+    #Parent Invoice
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.id"), nullable=False)
+    invoice = db.relationship("Invoice", back_populates="items")
+
+    #Driver
+    driver_id = db.Column(db.Integer, db.ForeignKey("driver_profile.user_id"), nullable=False)
+    driver = db.relationship("DriverProfile")
+
+    #Point History Reference
+    points_history_id = db.Column(db.Integer, db.ForeignKey("driver_points_history.id"), nullable=True)
+    points_history = db.relationship("DriverPointsHistory")
+
+    #product Details
+    description = db.Column(db.String(255), nullable=False)
+    points = db.Column(db.Integer, nullable=False)
+    amount = db.Column(db.DECIMAL(10,2), nullable=False)
+    transaction_date = db.Column(db.DateTime, nullable=False)

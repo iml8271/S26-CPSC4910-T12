@@ -16,6 +16,7 @@ from routes.admin import admin_bp
 from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, SponsorCompanyRules
 from datetime import datetime
 from flask_migrate import Migrate
+from routes_invoice import invoice_bp
 import os
 
 
@@ -40,6 +41,7 @@ app.register_blueprint(report_bp)
 app.register_blueprint(sponsor_bp)
 app.register_blueprint(driver_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(invoice_bp)
 # Create database
 with app.app_context():
     db.create_all()    

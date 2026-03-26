@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+ 
+{% block head %}
+<title>Admin - Invoice #{{ invoice.id }}</title>
+{% endblock %}
+ 
+{% block body %}
+ 
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Invoice #{{ invoice.id }}</h2>
+        <a href="{{ url_for('invoice.invoice_list') }}" class="btn btn-secondary">Back to Invoices</a>
+    </div>
+ 
+    <!-- Invoice Summary -->
+    <table class="table table-bordered mb-4" style="max-width: 500px;">
+        <tbody>
+            <tr>
+                <th class="table-dark" style="width: 40%;">Sponsor</th>
+                <td>{{ invoice.company.name }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Period</th>
+                <td>{{ invoice.start_date.strftime('%m/%d/%Y') }} - {{ invoice.end_date.strftime('%m/%d/%Y') }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Total Points</th>
+                <td>{{ invoice.total_points }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Total Amount</th>
+                <td>${{ "%.2f"|format(invoice.total_amount) }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Created By</th>
+                <td>{{ invoice.created_by_admin.firstname }} {{ invoice.created_by_admin.lastname }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Created On</th>
+                <td>{{ invoice.created_date.strftime('%m/%d/%Y %I:%M %p') }}</td>
+            </tr>
+            {% if invoice.notes %}
+            <tr>
+                <th class="table-dark">Notes</th>
+                <td>{{ invoice.notes }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+ 
+    <!-- Itemized Details -->
+    <h4>Itemized Details</h4>
+ 
+    {% if invoice.items %}
+    <table class="table table-hover report-table">
+        <thead class="table-dark">
+            <tr>
+                <th>Date</th>
+                <th>Driver</th>
+                <th>Description</th>
+                <th class="text-end">Points</th>
+                <th class="text-end">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items %}
+            <tr>
+                <td>{{ item.transaction_date.strftime('%m/%d/%Y') }}</td>
+                <td>{{ item.driver.firstname }} {{ item.driver.lastname }}</td>
+                <td>{{ item.description }}</td>
+                <td class="text-end">{{ item.points }}</td>
+                <td class="text-end">${{ "%.2f"|format(item.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="table-dark">
+                <td colspan="3"><strong>Total</strong></td>
+                <td class="text-end"><strong>{{ invoice.total_points }}</strong></td>
+                <td class="text-end"><strong>${{ "%.2f"|format(invoice.total_amount) }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+    <p class="text-muted">No line items found for this invoice period.</p>
+    {% endif %}
+ 
+    <!-- Delete -->
+    <div class="mt-4">
+        <form method="POST" action="{{ url_for('invoice.invoice_delete', invoice_id=invoice.id) }}"
+              onsubmit="return confirm('Are you sure you want to delete this invoice?');">
+            <button type="submit" class="btn btn-danger">Delete Invoice</button>
+        </form>
+    </div>
+ 
+{% endblock %}
+ 
