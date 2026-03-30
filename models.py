@@ -180,10 +180,13 @@ class SponsorCompany(db.Model):
     __tablename__ = "sponsor_companies"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150),unique=True,nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False,index=True)
-    phone = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True,index=True)
+    phone = db.Column(db.String(50), nullable=True)
     logo_filename = db.Column(db.String(255), nullable=True)
     brand_color = db.Column(db.String(255), nullable=True)
+    # "unit value" : 1 pt = X currency
+    # ex. if 1 points is worht 5 cents, the value is 0.05
+    # total value = pts x points_converstion
     points_conversion = db.Column(db.DECIMAL(10,2),nullable=False,default=1)
 
     # Employees

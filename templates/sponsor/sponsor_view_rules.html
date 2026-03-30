@@ -44,11 +44,11 @@
     </tbody>
 </table><br><br>
 
-<a href="{{ url_for('new_rule') }}">Add a New Rule!</a><br>
+<a href="{{ url_for('sponsor.new_rule') }}">Add a New Rule!</a><br>
 <br>
 
 <br><p>Remove a Rule from your organiztion:</p>
-<form action="{{ url_for('delete_rule') }}" method="POST">
+<form action="{{ url_for('sponsor.delete_rule') }}" method="POST">
     <label for="rr_target">Enter rule ID number:</label>
     <input type="text" id="rr_target" name="rr_target"><br>
     <br>

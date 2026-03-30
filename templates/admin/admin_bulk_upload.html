@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block head %}
+<title>Bulk Upload</title>
+{% endblock %}
+
 {% block body %}
 <div class="container py-5">
     <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
@@ -32,15 +36,15 @@
             <small class="text-muted">Fields: User Role, Organization, Driver Name, Email, Points, Reason for Points.</small>
         </div>
 
-        <form method="POST" action="{{ url_for('sponsor.add_drivers') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ url_for('admin.bulk_upload') }}" enctype="multipart/form-data">
             <div class="mb-4">
-                <label for="sponsor-upload-drivers" class="form-label" style="color: #5d4037; font-weight: 600;">Choose File:</label>
-                <input type="file" name="bulk_upload_file" id="sponsor-upload-drivers" class="form-control rounded-pill" accept=".txt" required>
+                <label for="bulk-upload" class="form-label" style="color: #5d4037; font-weight: 600;">Choose File:</label>
+                <input type="file" name="bulk_upload_file" id="bulk-upload" class="form-control rounded-pill" accept=".txt" required>
             </div>
             
             <div class="d-grid">
                 <button type="submit" class="btn btn-custom btn-lg rounded-pill shadow-sm">
-                    <i class="bi bi-cloud-upload me-1"></i> Upload Drivers
+                    <i class="bi bi-cloud-upload me-1"></i> Upload
                 </button>
             </div>
         </form>

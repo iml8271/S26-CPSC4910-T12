@@ -3,9 +3,6 @@ from statistics import median
 from flask import Flask, render_template, request, redirect, url_for, session,abort,flash,g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash,check_password_hash
-from werkzeug.utils import secure_filename
-import requests
 from functools import wraps
 from authentication import auth_bp
 from support import supp_bp
@@ -13,8 +10,7 @@ from reports import report_bp
 from routes.sponsor import sponsor_bp
 from routes.driver import driver_bp
 from routes.admin import admin_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, SponsorCompanyRules
-from datetime import datetime
+from models import db,Users,SponsorCompany
 from flask_migrate import Migrate
 from routes_invoice import invoice_bp
 import os
@@ -117,9 +113,9 @@ def dashboard():
         return render_template(
             "driver/driver_dashboard.html", username=current_user.username,links=active_links,profile=g.profile)
     elif current_user.role == "sponsor":
-        return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=g.profile.firstname)
+        return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=g.profile.firstname,profile=g.profile)
     elif current_user.role == "admin":
-        return render_template("admin/admin_dashboard.html", username=current_user.username)
+        return render_template("admin/admin_dashboard.html", profile=g.profile,username=current_user.username)
     else:
         return redirect(url_for('auth.handle_logout'))
 
@@ -139,6 +135,7 @@ def debug_driver_login():
     
     flash("No driver found in database to log in!", "danger")
     return redirect(url_for('debugmenu'))
+
 @app.route("/debug/login-sponsor")
 def debug_sponsor_login():
     debug_user = Users.query.filter_by(role="sponsor").first()
@@ -150,6 +147,7 @@ def debug_sponsor_login():
     
     flash("No driver found in database to log in!", "danger")
     return redirect(url_for('debugmenu'))
+
 @app.route("/debug/login-admin")
 def debug_admin_login():
     debug_user = Users.query.filter_by(role="admin").first()
@@ -176,136 +174,9 @@ def role_required(*roles):
             return fn(*args, **kwargs)
         return decorated_view
     return wrapper
-# ----- Admin Soeficifc --------------------
-@app.route("/admin/sponsor_list", methods=["GET","POST"])
-@role_required("admin")
-def admin_sponsor_list():
-    sponsors = SponsorProfile.query.all()
-    return render_template("admin/admin_sponsor_list.html",sponsors=sponsors)
 
 
-@app.route("/sponsor/organization/rules", methods=["GET"])
-def view_org_rules():
-    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    sourceORG = profile.company_id
-    good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
-    bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
-    return render_template("/sponsor/sponsor_view_rules.html", request1 = good_request, request2 = bad_request)
-
-@app.route("/sponsor/organization/rules", methods=["POST"])
-def delete_rule():
-    #get the right rule
-    id = request.form.get("rr_target")
-    rule = SponsorCompanyRules.query.get(id)
-    #delete the rule
-    db.session.delete(rule)
-    db.session.commit()
-    return redirect(url_for("view_org_rules"))
-
-
-@app.route("/sponsor/organization/rules/new_rule")
-def new_rule():
-    return render_template("/sponsor/sponsor_add_rule.html")
-
-@app.route("/sponsor/organization/rules/submit", methods=["POST"])
-def submit_rule():
-    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    sourceORG = profile.company_id
-    rType = request.form.get("rule_type")
-    details = request.form.get("details")
-
-    new_rule = SponsorCompanyRules(company_id=sourceORG, nature=rType, rule=details)
-
-    db.session.add(new_rule)
-    db.session.commit()
-    return redirect(url_for("view_org_rules"))
-
-# Hardcoded catalog
-catalog_items = [
-    {"name": "Jar Of Dirt", "description": "A mysterious jar of dirt", "price": 1},
-    {"name": "CB Radio", "description": "Stay connected on the road", "price": 1500},
-    {"name": "$50 Taco Bell Gift Card", "description": "Redeemable at any location", "price": 3000},
-]
-catalog_price_range = {"min": 0, "max": 10000}
-@app.route("/sponsor/sponsor_catalog_editor")
-@role_required("sponsor")
-def sponsor_catalog_editor():
-    return render_template("sponsor/sponsor_catalog_editor.html", items=catalog_items)
-@app.route('/sponsor/sponsor_catalog/set-price-range', methods=['POST'])
-def sponsor_catalog_set_price_range():
-    min_price = int(request.form.get("min_price", 0))
-    max_price = int(request.form.get("max_price", 10000))
-
-    if min_price > max_price:
-        flash('error min price greater than max')
-        return redirect(url_for('sponsor_catalog'))
-
-    catalog_price_range["min"] = min_price
-    catalog_price_range["max"] = max_price
-
-    flash(f'Point range: {min_price} - {max_price} pts')
-    return redirect(url_for('sponsor_catalog_editor'))
-
-@app.route("/sponsor/sponsor_catalog_editor/add", methods=["POST"])
-@role_required("sponsor")
-def sponsor_catalog_add():
-    price = int(request.form.get("price"))
-    if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
-        flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
-        return redirect(url_for("sponsor_catalog_editor"))
-
-    catalog_items.append({
-        "name": request.form.get("name"),
-        "description": request.form.get("description"),
-        "price": int(request.form.get("price"))
-    })
-    flash("item added successfully")
-    return redirect(url_for("sponsor_catalog_editor"))
-
-@app.route("/sponsor/sponsor_catalog_editor/edit/<int:item_index>", methods=["POST"])
-@role_required("sponsor")
-def sponsor_catalog_edit(item_index):
-    price = int(request.form.get("price"))
-    if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
-        flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
-        return redirect(url_for("sponsor_catalog_editor"))
-
-    if 0 <= item_index < len(catalog_items):
-        catalog_items[item_index] = {
-            "name": request.form.get("name"),
-            "description": request.form.get("description"),
-            "price": int(request.form.get("price"))
-        }
-        flash("Item price changed sucessfuly")
-    return redirect(url_for("sponsor_catalog_editor"))
-
-@app.route("/sponsor/sponsor_catalog_editor/delete/<int:item_index>", methods=["POST"])
-@role_required("sponsor")
-def sponsor_catalog_delete(item_index):
-    if 0 <= item_index < len(catalog_items):
-        catalog_items.pop(item_index)
-        flash("Item deleted successfully yay!")
-    return redirect(url_for("sponsor_catalog_editor"))
-
-@app.route("/sponsor/reports/points",methods=["GET"])
-@login_required
-def points_report():
-    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    target_id = profile.company_id
-    request = db.session.query(DriverPointsHistory).join(SponsorProfile).filter(SponsorProfile.company_id == target_id).all()
-    return render_template("admin/reports/admin_points_report.html", history = request)
-
-# ------- Driver Speficics ------------------
-
-@app.route("/driver/organization/rules", methods=["GET"])
-def driver_view_org_rules():
-    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
-    sourceORG = profile.company_id
-    good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
-    bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
-    return render_template("/driver/driver_view_rules.html", request1 = good_request, request2 = bad_request)
-
-# ------------ Protected dashboard Route --------------
+'''
 @app.route("/admin/dashboard")
 @role_required("admin")
 def view_admin_dashboard():
@@ -323,71 +194,7 @@ def view_driver_dashboard():
     profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
     points = profile.points if profile else 0
     return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=profile)
-
-
-@app.route("/driver/dashboard/driver_catalog", methods=["GET"])
-@login_required
-def driver_catalog():
-    #we can remove these after we make a catalog for sponors
-
-    itunes_url = "https://itunes.apple.com/search"
-
-    params = {
-        "term": "Michael+Jackson",
-        "media": "all",
-        "limit": 50,
-        "explicit": "No"
-    }
-
-    results = requests.get(itunes_url, params=params)
-    data = results.json()
-
-    return render_template("driver/driver_catalog.html", items=data['results'])
-
-@app.route("/driver/dashboard/driver_catalog/search", methods=["GET", "POST"])
-@login_required
-def driver_catalog_search():
-    term = request.form.get("user_search")
-    term = term.replace(" ", "+")
-    mediaType = request.form.get("media_type")
-
-    itunes_url = "https://itunes.apple.com/search"
-
-    params = {
-        "term": term,
-        "media": mediaType,
-        "limit": 50,
-        "explicit": "No"
-    }
-
-    results = requests.get(itunes_url, params=params)
-    data = results.json()
-
-    return render_template("driver/driver_catalog.html", items=data['results'])
-
-@app.route("/driver/dashboard/driver_order_history")
-@login_required
-def driver_order_history():
-    #we can remove these after we update database
-    items = [
-        {"name": "Jar Of Dirt", "price": 1, "date": "02/09/26"},
-        {"name": "CV Radio", "price": 1500, "date": "06/21/87"},
-        {"name": "$50 Taco Bell Gift Card", "price": 3000, "date": "09/01/20"},
-    ]
-    return render_template("driver/driver_order_history.html", items=items)
-
-@app.route("/driver/dashboard/driver_points_review")
-@login_required
-def driver_points_review():
-    #filler for now, will use db when added.
-    points_log = [
-        {"date": "2024-01-15", "points": 100, "description": "Max Points, No Infractions"},
-        {"date": "2024-01-20", "points": 50, "description": "50 Points Deducted for Speeding"},
-        {"date": "2024-02-05", "points": 100, "description": "Max Points, No Infractions"},
-    ]
-    return render_template("driver/driver_points_review.html",points_log=points_log)
-
-
+'''
 
 @app.route("/driver_profile")
 @login_required

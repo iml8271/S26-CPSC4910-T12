@@ -4,13 +4,14 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
 from models import db, Users, DriverProfile, SponsorCompany, SponsorProfile, DriverPointsHistory, DriverApplications, \
-    Driver_Org_RelationShip
+    Driver_Org_RelationShip,SponsorCompanyRules
 from datetime import datetime
 from functools import wraps
 import csv
 import io
 from helpers import role_required,driver_create,driver_update_points,sponsor_create
 import os
+import requests
 
 driver_bp = Blueprint("driver",__name__,url_prefix="/driver")
 
@@ -130,3 +131,71 @@ def mysponsors_apply(company_id):
         flash("You already have an application for this company.")
 
     return redirect(url_for('driver.mysponsors_status'))
+
+# ORGANIZATION RULES ------------------------------------
+@driver_bp.route("/organization/rules", methods=["GET"])
+def driver_view_org_rules():
+    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
+    sourceORG = profile.company_id
+    good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
+    bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
+    return render_template("/driver/driver_view_rules.html", request1 = good_request, request2 = bad_request)
+
+# CATALOG ------------------------------------------------
+@driver_bp.route("/dashboard/driver_catalog", methods=["GET"])
+def driver_catalog():
+    #we can remove these after we make a catalog for sponors
+
+    itunes_url = "https://itunes.apple.com/search"
+
+    params = {
+        "term": "Michael+Jackson",
+        "media": "all",
+        "limit": 50,
+        "explicit": "No"
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+
+    return render_template("driver/driver_catalog.html", items=data['results'])
+
+@driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])
+def driver_catalog_search():
+    term = request.form.get("user_search")
+    term = term.replace(" ", "+")
+    mediaType = request.form.get("media_type")
+
+    itunes_url = "https://itunes.apple.com/search"
+
+    params = {
+        "term": term,
+        "media": mediaType,
+        "limit": 50,
+        "explicit": "No"
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+
+    return render_template("driver/driver_catalog.html", items=data['results'])
+
+@driver_bp.route("/driver_order_history")
+def driver_order_history():
+    #we can remove these after we update database
+    items = [
+        {"name": "Jar Of Dirt", "price": 1, "date": "02/09/26"},
+        {"name": "CV Radio", "price": 1500, "date": "06/21/87"},
+        {"name": "$50 Taco Bell Gift Card", "price": 3000, "date": "09/01/20"},
+    ]
+    return render_template("driver/driver_order_history.html", items=items)
+
+@driver_bp.route("/driver_points_review")
+def driver_points_review():
+    #filler for now, will use db when added.
+    points_log = [
+        {"date": "2024-01-15", "points": 100, "description": "Max Points, No Infractions"},
+        {"date": "2024-01-20", "points": 50, "description": "50 Points Deducted for Speeding"},
+        {"date": "2024-02-05", "points": 100, "description": "Max Points, No Infractions"},
+    ]
+    return render_template("driver/driver_points_review.html",points_log=points_log)

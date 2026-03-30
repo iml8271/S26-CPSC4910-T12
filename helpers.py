@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from models import db,Users,DriverProfile,DriverApplications,DriverPointsHistory,SponsorProfile
+from models import db,Users,DriverProfile,DriverApplications,DriverPointsHistory,SponsorProfile,DriverCompanyLink
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm.exc import DetachedInstanceError
 from functools import wraps
@@ -125,6 +125,27 @@ def driver_create(
         db.session.rollback()
         raise RuntimeError(f"Failed to create driver: {str(e)}") from e
 
+def add_driver_link(
+    driver_profile: DriverProfile,
+    company_id: int,
+) -> DriverCompanyLink:
+    # Check for previous relationship
+    link = DriverCompanyLink.query.filter_by(
+            driver_id=driver_profile.user_id
+            ,company_id=company_id).first()
+    if link:
+        link.is_active = True
+        db.session.add(link)
+        return
+    if not link:
+        link = DriverCompanyLink(
+            driver_profile = driver_profile,
+            company_id = company_id,
+            is_active = True)
+        db.session.add(link)
+        db.session.flush()
+    
+
 def driver_add_link(
     driver_profile: DriverProfile,
     company_id: int,
@@ -132,7 +153,14 @@ def driver_add_link(
     sponsor_user_id: int | None = None,
     initial_points: int = 0
 ) -> DriverCompanyLink:
-    
+    link = DriverCompanyLink.query.filter_by(
+            driver_id=driver_profile.user_id
+            ,company_id=company_id).first()
+    if not link:
+            link = DriverCompanyLink(
+                driver_profile = driver_profile,
+                company_id = company_id
+            )
     try:
         # Add Linkage
         # Query to check for previous relationship
@@ -323,6 +351,352 @@ def driver_reject_application(
         db.session.rollback()
         raise RuntimeError(f"Failed to reject driver: {str(e)}") from e
 
+
+          
+class DriverBuilder:
+    def __init__(self, email, firstname, lastname):
+        self.email = email.strip()
+        self.firstname = firstname.strip()
+        self.lastname = lastname.strip()
+        
+        # Optional Components & Defaults
+        self.username = None
+        self.password = "Password1" 
+        self.address = {}
+        self.sponsor_info = None # {id, auto_accept, points, reason}
+
+    def with_auth(self, username, password):
+        self.username = username.strip()
+        self.password = password
+        return self
+
+    def with_address(self, street, city, zipcode):
+        self.address = {
+            "streetname": street.strip(),
+            "city": city.strip(),
+            "zipcode": zipcode.strip()
+        }
+        return self
+
+    def with_company(self, company_id, auto_accept=False, points=0, reason="New Registration", sponsor_id=None):
+        self.sponsor_info = {
+            "company_id": company_id,
+            "auto_accept": auto_accept,
+            "points": points,
+            "reason": reason,
+            "sponsor_id" : sponsor_id
+        }
+        return self
+
+    def build(self):
+        try: 
+            # 1. Validation
+            if Users.query.filter_by(email=self.email).first():
+                raise ValueError(f"Email {self.email} is already registered.")
+            
+            # 2. Logic for Username/Password
+            final_username = self.username or generate_unique_username(self.email)         
+            hashed_pw = generate_password_hash(self.password)
+
+            # 3. Create core User & Profile
+            new_user = Users(
+                email=self.email, 
+                username=final_username, 
+                password=hashed_pw, 
+                role="driver"
+            )
+            new_user.driver_profile = DriverProfile(
+                firstname=self.firstname,
+                lastname=self.lastname,
+                **self.address,
+                is_active=self.sponsor_info['auto_accept'] if self.sponsor_info else False
+            )
+
+            db.session.add(new_user)
+            db.session.flush()
+
+            # 4. Process Sponsor Application/Link
+            if self.sponsor_info:
+                status = "accepted" if self.sponsor_info['auto_accept'] else "pending"
+                creation_time = datetime.now()
+
+                app = DriverApplications(
+                    driver_profile=new_user.driver_profile,
+                    company_id=self.sponsor_info['company_id'],
+                    status=status,
+                    status_reason=self.sponsor_info['reason'],
+                    status_date=creation_time if self.sponsor_info['auto_accept'] else None
+                )
+                db.session.add(app)
+
+                if self.sponsor_info['auto_accept']:
+                    # Create Link
+                    link = DriverCompanyLink(
+                        driver_profile = new_user.driver_profile,
+                        company_id = self.sponsor_info['company_id'],
+                        is_active = True,
+                        status_date = creation_time
+                    )
+                    db.session.add(link)
+                    db.session.flush()
+
+                    # Create Points History
+                    pts_change = DriverPointsHistory(
+                        link_id = link.id,
+                        points_change = self.sponsor_info['points'],
+                        current_points = self.sponsor_info['points'],
+                        update_date = creation_time,
+                        reason = self.sponsor_info['reason'],
+                        sponsor_user_id = self.sponsor_info['sponsor_id']
+                    )
+                    db.session.add(pts_change)
+
+            db.session.commit()
+            return new_user   
+        except Exception as e:
+            db.session.rollback()
+            print(f"DEBUG BUILDER ERROR: {e}") 
+            raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+        
+class DriverService:
+    # --- CREATION WORKFLOWS ---
+    @staticmethod
+    def register_online(data):
+        """Path: Driver fills out the full web form."""
+        return DriverBuilder(data['email'], data['firstname'], data['lastname']) \
+            .with_auth(data['username'], data['password']) \
+            .with_address(data['street'], data['city'], data['zip']) \
+            .with_company(data['company_id'], auto_accept=False) \
+            .build()
+
+    @staticmethod
+    def register_bulk(row, company_id):
+        """Path: Auto-accepted, minimal info."""
+        points = int(row.get('points', 0)) if row.get('points') else 0
+        return DriverBuilder(row['email'], row['firstname'], row['lastname']) \
+            .with_company(company_id, auto_accept=True, points=points, reason="Bulk Import") \
+            .build()
+
+    # --- MAINTENANCE WORKFLOWS ---
+    @staticmethod
+    def accept_application(driver_id,company_id,initial_points = 0,reason="Accept Application",sponsor_id=None):
+        try:
+            application = DriverApplications.query.filter_by(
+                driver_id = driver_id,
+                company_id=company_id).first()
+            if not application:
+                raise ValueError(f"No application found")
+        
+            application.status = "accepted"
+            application.status_reason = reason
+            application.status_date = datetime.now()
+            db.session.add(application)
+
+            DriverService.add_link(
+                driver_id=driver_id,
+                company_id=company_id,
+                initial_points = initial_points,
+                reason = reason,
+                sponsor_id = sponsor_id
+            )
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+
+    @staticmethod
+    def add_link(driver_id,company_id,initial_points = 0,reason="New Link",sponsor_id=None):
+        try:
+            creation_time = datetime.now()
+            link = DriverCompanyLink.query.filter_by(driver_id=driver_id,company_id=company_id).first()
+            if link:
+                if link.is_active:
+                    return link
+                else:
+                    link.is_active = True
+            else:
+                link = DriverCompanyLink(
+                    driver_id = driver_id,
+                    company_id = company_id,
+                    is_active = True,
+                    status_date = creation_time
+                )
+            db.session.add(link)
+            db.session.flush()
+
+            # Create Points History
+            pts_change = DriverPointsHistory(
+                link_id = link.id,
+                points_change = initial_points,
+                current_points = initial_points,
+                update_date = creation_time,
+                reason = reason,
+                sponsor_user_id = sponsor_id
+            )
+            db.session.add(pts_change)
+            #db.session.commit()
+            return link
+        except Exception as e:
+            db.session.rollback()
+            raise RuntimeError(f"Failed to create driver-company link: {str(e)}") from e
+        
+    @staticmethod
+    def remove_link(driver_id,company_id,reason="Link Ended",sponsor_id=None):
+        try:
+            link = DriverCompanyLink.query.filter_by(
+                driver_id=driver_id,
+                company_id=company_id).first()
+            if not link:
+                raise ValueError(f"Link is not found")
+            if not link.is_active:
+                return link
+        
+            link.is_active = False
+            link.status_date = datetime.now()
+            db.session.add(link)
+
+            # Add Final Points Record
+            closeout_record = DriverPointsHistory(
+                link = link,
+                points_change = 0,
+                current_points = link.current_points,
+                reason = reason,
+                sponsor_user_id = sponsor_id
+            )
+            db.session.add(closeout_record)
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            raise RuntimeError(f"Failed to remove driver from company: {str(e)}") from e
+
+    @staticmethod
+    def add_points(driver_id, company_id, amount, reason="No Reason Given", sponsor_user_id=None):
+        """Updates points for an existing driver."""
+        try: 
+            link = DriverCompanyLink.query.with_for_update().filter_by(
+                driver_id=driver_id
+                ,company_id=company_id).first()
+            if not link:
+                raise ValueError("Driver is not linked to this company.")
+
+            new_record = DriverPointsHistory(
+                link=link,
+                points_change=amount,
+                current_points = link.current_points + amount,
+                reason=reason,
+                sponsor_user_id=sponsor_user_id
+            )
+            db.session.add(new_record)
+            db.session.commit()
+            return link
+        except DetachedInstanceError:
+            db.session.rollback()
+            raise RuntimeError("Database error: Driver profile is detached from session.")
+        except Exception as e:
+            db.session.rollback()
+            raise RuntimeError(f"Database error while updating points: {str(e)}") from e
+
+    @staticmethod
+    def update_address(driver_id, street, city, zip_code):
+        try:
+            profile = DriverProfile.query.filter_by(user_id=driver_id).first()
+            if not profile:
+                raise ValueError(f"Driver does not exist with this id {driver_id}.")
+            profile.streetname = street.strip()
+            profile.city = city.strip()
+            profile.zipcode = zip_code.strip()
+            db.session.commit()
+            return profile
+        except DetachedInstanceError:
+            db.session.rollback()
+            raise RuntimeError("Database error: Driver profile is detached from session.")
+        except Exception as e:
+            db.session.rollback()
+            raise RuntimeError(f"Database error while updating address: {str(e)}") from e
+    
+    @staticmethod
+    def sync_driver_relationship(email, fname, lname, company_id, points=0,reason="Sync", sponsor_id=None):
+        """
+        The 'Smart' Logic for Bulk Uploads:
+        1. Find or Create the User/Profile.
+        2. Ensure they are a Driver.
+        3. Find or Create the Link to the Company.
+        4. Update the Points.
+        """
+        try:
+            company_id = int(company_id)
+            # --- STEP 1: Find or Create User ---
+            user = Users.query.filter_by(email=email).first()
+            
+            if not user:
+                # Scenario: Email doesn't exist at all -> Full Create
+                user = Users(
+                    email=email, 
+                    username=generate_unique_username(email),
+                    password=generate_password_hash("Password1"),
+                    role="driver"
+                )
+                user.driver_profile = DriverProfile(firstname=fname, lastname=lname, is_active=True)
+                db.session.add(user)
+            else:
+                # Scenario: User exists. Ensure they have a driver profile.
+                if not user.driver_profile:
+                    user.role = "driver" # Update role if they were something else
+                    user.driver_profile = DriverProfile(firstname=fname, lastname=lname, is_active=True)
+                
+            db.session.flush()
+
+            # --- STEP 2: Handle Application (Auto-Accept) ---
+            # We check if an application already exists to avoid duplicates
+            app = DriverApplications.query.filter_by(user_id=user.id, company_id=company_id).first()
+            if not app:
+                app = DriverApplications(
+                    user_id=user.id, 
+                    company_id=company_id, 
+                    status="accepted", 
+                    status_date=datetime.now(),
+                    status_reason=reason
+                )
+            else:
+                app.status="accepted"
+                app.status_date=datetime.now()
+                app.reason=reason
+            db.session.add(app)
+
+            # --- STEP 3: Find or Create the Link ---
+            link = DriverCompanyLink.query.filter_by(driver_id=user.id, company_id=company_id).first()
+            
+            if not link:
+                # Scenario: Driver exists but isn't linked to THIS company yet
+                link = DriverCompanyLink(
+                    driver_id=user.id,
+                    company_id=company_id,
+                    is_active=True,
+                    current_points=0 # History will update this
+                )
+                db.session.add(link)
+                db.session.flush()
+            elif not link.is_active:
+                link.is_active = True # Reactivate if they were previously removed
+
+            # --- STEP 4: Update Points ---
+            # Even if the driver existed with a link, we still add the new points
+            if points != 0:
+                history = DriverPointsHistory(
+                    link_id=link.id,
+                    points_change=points,
+                    current_points=link.current_points + points,
+                    reason=reason,
+                    sponsor_user_id=sponsor_id
+                )
+                db.session.add(history)
+
+            db.session.commit()
+            return user
+
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
 # SPONSOR ------------------------------------
 def sponsor_create(

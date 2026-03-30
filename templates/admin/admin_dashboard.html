@@ -6,9 +6,13 @@
 
 {% block body %}
 <h1>Logged in as Admin!</h1>
-<a href="{{ url_for('admin_sponsor_list') }}">My Sponsors</a>
+<h1>Welcome {{ profile.firstname }} </h1>
+<a href="{{ url_for('admin.all_companies_list') }}"> All Companies</a>
+<a href="{{ url_for('admin.admin_sponsor_list') }}">My Sponsors</a>
 
 <a href="{{ url_for('support.admin_view_requests') }}">Support Requests</a>
 
 <a href="{{ url_for('report.display_landing') }}">Reports</a>
+<br><br>
+<a href="{{ url_for('admin.bulk_upload') }}">Bulk Upload</a>
 {% endblock %}

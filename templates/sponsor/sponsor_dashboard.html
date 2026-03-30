@@ -14,6 +14,13 @@
         <p class="text-center text-muted mb-5">Sponsor Dashboard</p>
 
         <div class="row text-center g-4">
+            <div class="col-12">
+                <a href="{{ url_for('view_company_profile',company_id=profile.company_id) }}" class="text-decoration-none">
+                    <div class="p-3 rounded-pill shadow-sm" style="background-color: #fff8e1; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <h6 class="mb-0" style="color: #795548; font-weight: 600;">📖 My Sponsor</h6>
+                    </div>
+                </a>
+            </div>
             
             <div class="col-sm-6">
                 <a href="{{ url_for('sponsor.view_drivers') }}" class="text-decoration-none">
@@ -43,16 +50,25 @@
             </div>
 
             <div class="col-sm-6">
-                <a href="{{ url_for('sponsor_catalog_editor') }}" class="text-decoration-none">
+                <a href="{{ url_for('sponsor.sponsor_catalog_editor') }}" class="text-decoration-none">
                     <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
                         <span style="font-size: 2rem;">🏷️</span>
                         <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">Catalog Editors</h5>
                     </div>
                 </a>
             </div>
+
+            <div class="col-sm-6">
+                <a href="{{ url_for('support.support_form') }}" class="text-decoration-none">
+                    <div class="p-4 rounded-4 shadow-sm h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2; transition: all 0.3s;">
+                        <span style="font-size: 2rem;">💬</span>
+                        <h5 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600;">Fellow Sponsors</h5>
+                    </div>
+                </a>
+            </div>
             
             <div class="col-12">
-                <a href="{{ url_for('view_org_rules') }}" class="text-decoration-none">
+                <a href="{{ url_for('sponsor.view_org_rules') }}" class="text-decoration-none">
                     <div class="p-3 rounded-pill shadow-sm" style="background-color: #fff8e1; border: 1px solid #ffe0b2; transition: all 0.3s;">
                         <h6 class="mb-0" style="color: #795548; font-weight: 600;">📖 Organization Driving Rules</h6>
                     </div>
