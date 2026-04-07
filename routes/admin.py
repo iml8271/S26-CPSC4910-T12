@@ -4,8 +4,9 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
 from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverPointsHistory, DriverApplications,DriverCompanyLink
-from helpers import role_required,driver_create,driver_update_points,sponsor_create,DriverBuilder,DriverService
+from helpers import *
 import csv
+from sqlalchemy import or_,not_
 
 admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
 
@@ -36,6 +37,51 @@ def admin_sponsor_list():
 def all_companies_list():
     companies = SponsorCompany.query.all()
     return render_template("admin/admin_company_list.html",companies=companies)
+
+@admin_bp.route("/directory", methods=["GET", "POST"])
+@admin_bp.route("/directory/<role>/<int:company_id>", methods=["GET", "POST"])
+def directory(role=None, company_id=None):
+    query = Users.query.filter(or_(Users.role == "driver", Users.role == "sponsor"))
+    if role and role != "all":
+        query.filter_by(role=role)
+    if company_id and company_id != 0:
+        query = query.join(DriverCompanyLink).filter_by(company_id=company_id)
+    # 4. Filter by Search (Optional: Real-time via URL)
+    search = request.args.get('search', '')
+    if search:
+        query = query.filter(or_(
+            Users.username.ilike(f"%{search}%"),
+            Users.email.ilike(f"%{search}%")
+        ))
+
+    users = query.all()
+    companies = SponsorCompany.query.all()
+
+    return render_template('directory.html', 
+                           users=users, 
+                           companies=companies, 
+                           current_role=role, 
+                           current_company=company_id)
+
+@admin_bp.route("/profile-card/<int:user_id>", methods=["GET","POST"])
+def view_profilecard(user_id):
+    user = Users.query.get_or_404(user_id)
+    
+    # 2. Get all companies so we can show the "Apply" list
+    all_companies = SponsorCompany.query.all()
+    
+    return render_template('usercard.html', profile=user, all_companies=all_companies)
+
+@admin_bp.route("/profile-card/<int:user_id>/apply/<int:company_id>", methods=["POST"])
+def apply_driver(user_id,company_id):
+    try:
+        ext_driver_auto_link(driver_id=user_id,company_id=company_id)
+    except Exception as e:
+        # flash(f"Error: {str(e)}", "danger")
+        print(f"Error: {e}")
+    return redirect(url_for('admin.view_profilecard',user_id=user_id))
+
+
 
 
 @admin_bp.route("/bulk_upload", methods=["GET","POST"])

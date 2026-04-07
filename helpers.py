@@ -39,6 +39,177 @@ def validate_model(obj, model_name="Object"):
     return obj
 
 # DRIVER ------------------
+#trusts everything has been checked
+def driver_create_profile(email,firstname,lastname,username,password)->Users:
+    hashed_password = generate_password_hash(password,method="pbkdf2:sha256") if password else None
+    try:
+        # Create core user
+        new_user = Users(
+            username=username,
+            password=hashed_password,
+            email=email,
+            role="driver"
+        )
+
+        # Create driver profile
+        new_user.driver_profile = DriverProfile(
+            firstname=firstname,
+            lastname=lastname,
+        )
+
+        db.session.add(new_user)
+        db.session.flush()
+        return new_user
+    
+    except Exception as e:
+        raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+def driver_create_application(driver_id,company_id):
+    #defaults to "pending"
+    try:
+        app = DriverApplications(
+            user_id=driver_id,
+            company_id=company_id,
+            status_date=datetime.now()
+        )
+        db.session.add(app)
+        db.session.flush()
+    except Exception as e:
+        raise RuntimeError(f"Failed to create application: {str(e)}") from e
+def driver_status_application(driver_id,company_id,status,status_reason):
+    try:
+        app = DriverApplications.query.filter_by(user_id=driver_id,company_id=company_id).first()
+        app.status = status
+        app.status_reason = status_reason
+        app.status_date = datetime.now()
+        db.session.add(app)
+        db.session.flush()
+    except Exception as e:
+        raise RuntimeError(f"Failed to change application: {str(e)}") from e      
+# creates an activates a link between a driver and a company - Initatlies points
+def driver_active_link(driver_id,company_id,points=0, reason = "New Relationship"):
+    try:
+        link = DriverCompanyLink.query.filter_by(
+            driver_id=driver_id,
+            company_id=company_id).first()
+        if not link:
+            link = DriverCompanyLink(
+                driver_id=driver_id,
+                company_id=company_id)
+        link.is_active = True
+        link.status_date = datetime.now()
+        db.session.add(link)
+        db.session.flush()
+
+        init_points = DriverPointsHistory(
+            link_id = link.id,
+            points_change = points,
+            current_points = points,
+            reason = reason
+        )
+        db.session.add(init_points)
+        db.session.flush()
+    except Exception as e:
+        raise RuntimeError(f"Failed to create application: {str(e)}") from e
+def driver_update_address(driver_id,streetname,city,zipcode):
+    try:
+        driver_profile = DriverProfile.query.filter_by(user_id=driver_id).first()
+        if not driver_profile:
+            raise ValueError(f"No profile found for user ID {driver_id}")
+        driver_profile.streetname = streetname
+        driver_profile.city = city
+        driver_profile.zipcode = zipcode
+        db.session.add(driver_profile)
+        db.session.flush()
+    except Exception as e:
+        raise RuntimeError(f"Failed to update address: {str(e)}") from e
+# requires an active link
+def driver_change_points(driver_id,company_id,points,sponsor_id,reason="New Link"):
+    try:
+        link = DriverCompanyLink.query.filter_by(
+            driver_id=driver_id,
+            company_id=company_id).first()
+        if not link:
+            raise ValueError("No relation to company found")
+
+        history_update = DriverPointsHistory(
+            link_id = link.id,
+            points_change = points,
+            current_points = (points+link.current_points),
+            reason = reason
+        )
+        if sponsor_id:
+            history_update.sponsor_user_id = sponsor_id
+        db.session.add(history_update)
+    except Exception as e:
+        raise RuntimeError(f"Failed to change points for driver: {str(e)}") from e
+# exisiting driver, auto accept into company
+def ext_driver_auto_link(driver_id,company_id,points=0,points_reason="Auto-Accept"):
+    try:
+        # Create application
+        driver_create_application(driver_id=driver_id,company_id=company_id)
+        # Update application
+        driver_status_application(driver_id=driver_id,company_id=company_id,status="accepted",status_reason="Auto-Accepted")
+        # Add Company Link
+        driver_active_link(driver_id=driver_id,company_id=company_id,points=points,reason=points_reason)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise RuntimeError(f"Failed to create link: {str(e)}") from e
+
+# Creates core user, driver profile, and application
+def driver_create_signup(email,firstname,lastname,username,password,streetname,city,zipcode,company_id):
+    try:
+        # Create profile
+        # Check Email uniqueness : email is unique identifier
+        if Users.query.filter_by(email=email).first():
+            raise ValueError(f"Email {email} is already registered to a user")
+        # Check Username uniqueness : username is unique identifier
+        if Users.query.filter_by(username=username).first():
+            raise ValueError(f"Username {username} is already registered to a user")
+        driver_user = driver_create_profile(email=email,firstname=firstname,
+                                            lastname=lastname,username=username,
+                                            password=password)
+        # Add address
+        driver_update_address(driver_id=driver_user.id,streetname=streetname,city=city,zipcode=zipcode)
+        # Create application
+        driver_create_application(driver_id=driver_user.id,company_id=company_id)
+        db.session.commit()
+        return driver_user
+    except Exception as e:
+        db.session.rollback()
+        raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+
+
+def driver_create_bulk(email,firstname,lastname,company_id,points,points_reason):
+    try:
+        # Create profile
+        # Check Email uniqueness : email is unique identifier
+        if Users.query.filter_by(email=email).first():
+            raise ValueError(f"Email {email} is already registered to a user")
+        username = generate_unique_username(email)
+        password = "Password1"
+        driver_user = driver_create_profile(email=email,firstname=firstname,
+                                            lastname=lastname,username=username,
+                                            password=password)
+        # Create application
+        driver_create_application(driver_id=driver_user.id,company_id=company_id)
+        # Update application
+        driver_status_application(driver_id=driver_user.id,company_id=company_id,status="accepted")
+        # Add Company Link
+        driver_active_link(driver_id=driver_user.id,company_id=company_id,points=points,reason=points_reason)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise RuntimeError(f"Failed to change application: {str(e)}") from e
+
+
+
+
+
+
+
+
+'''
 def driver_create(
     email: str,
     firstname: str,
@@ -267,7 +438,7 @@ def driver_update_points(
         db.session.rollback()
         raise RuntimeError(f"Database error while updating points: {str(e)}") from e
 
-def driver_update_address(
+def driver_a_update_address(
     driver_profile:DriverProfile,
     streetname: str ,
     city: str,
@@ -297,7 +468,7 @@ def driver_update_address(
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Failed to update driver address: {str(e)}")
-
+'''
 def driver_accept_application(
     driver_profile: DriverProfile,
     company_id: int,

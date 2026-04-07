@@ -18,11 +18,11 @@
     <div class="col-md-4 mb-4">
         <div class="driver-card">
             <div class="driver-card-body">
-                <h3 class="driver-card-title">{{ driver.firstname }} {{ driver.lastname }}</h3>
+                <h3 class="driver-card-title">{{ driver.driver_profile.firstname }} {{ driver.driver_profile.lastname }}</h3>
                 
                 <p class="driver-card-text">
                     Current Points:
-                    <span class="driver-card-points">{{ driver.points }}</span>
+                    <span class="driver-card-points">{{ driver.current_points }}</span>
                 </p>
                 
                 <div class="d-flex gap-2">
@@ -30,8 +30,8 @@
                         class="btn btn-custom rounded-pill flex-grow-1" 
                         data-bs-toggle="modal" 
                         data-bs-target="#adjustPointsModal" 
-                        data-driverid="{{ driver.user_id }}" 
-                        data-drivername="{{ driver.firstname }} {{ driver.lastname }}">
+                        data-driverid="{{ driver.driver_id }}" 
+                        data-drivername="{{ driver.driver_profile.firstname }} {{ driver.driver_profile.lastname }}">
                         Adjust Points
                     </button>
                     <button class="btn btn-outline-danger rounded-pill">Delete</button>
@@ -45,7 +45,7 @@
 <div class="modal fade" id="adjustPointsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
-            <form action="{{ url_for('sponsor.adjust_points') }}" method="POST">
+            <form id="pointsForm" action="" method="POST">
                 <div class="modal-header border-bottom-0 pb-0">
                     <h5 class="modal-title" style="color: #ff9800; font-weight: 700;">Adjust Points</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -57,7 +57,7 @@
                     
                     <div class="mb-3">
                         <label class="form-label" style="color: #5d4037; font-weight: 600;">Point Change (+/-)</label>
-                        <input type="number" name="points_change" class="form-control rounded-pill" placeholder="e.g. 50 or -20" required>
+                        <input type="number" name="points" class="form-control rounded-pill" placeholder="e.g. 50 or -20" required>
                     </div>
                     
                     <div class="mb-3">
@@ -75,17 +75,14 @@
 </div>
 
 <script>
-    var adjustPointsModal = document.getElementById('adjustPointsModal')
+    const adjustPointsModal = document.getElementById('adjustPointsModal')
     adjustPointsModal.addEventListener('show.bs.modal', function (event) {
-        var button = event.relatedTarget
-        var driverId = button.getAttribute('data-driverid')
-        var driverName = button.getAttribute('data-drivername')
+        const button = event.relatedTarget
+        const driverId = button.getAttribute('data-driverid')
+        const driverName = button.getAttribute('data-drivername')
         
-        var modalInputId = adjustPointsModal.querySelector('#targetDriverId')
-        var modalDriverName = adjustPointsModal.querySelector('#targetDriverName')
-        
-        modalInputId.value = driverId
-        modalDriverName.textContent = driverName
+        adjustPointsModal.querySelector('#targetDriverName').textContent = driverName
+        adjustPointsModal.querySelector('#pointsForm').action = "/sponsor/driver_list/update_points/" + driverId
     })
 </script>
 {% endblock %}

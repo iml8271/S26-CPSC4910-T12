@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container py-4">
+    <h2 class="mb-4">User Directory</h2>
+
+    <div class="row g-3 mb-4 p-3 bg-light rounded-4 shadow-sm">
+        <div class="col-md-3">
+            <label class="small text-muted">Role</label>
+            <select class="form-select rounded-pill" onchange="location = this.value;">
+                <option value="{{ url_for('admin.directory', role='all', company_id=current_company) }}" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
+                <option value="{{ url_for('admin.directory', role='driver', company_id=current_company) }}" {% if current_role == 'driver' %}selected{% endif %}>Drivers</option>
+                <option value="{{ url_for('admin.directory', role='sponsor', company_id=current_company) }}" {% if current_role == 'sponsor' %}selected{% endif %}>Sponsors</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="small text-muted">Company</label>
+            <select class="form-select rounded-pill" onchange="location = this.value;">
+                <option value="{{ url_for('admin.directory', role=current_role, company_id=0) }}">All Companies</option>
+                {% for comp in companies %}
+                <option value="{{ url_for('admin.directory', role=current_role, company_id=comp.id) }}" {% if current_company == comp.id %}selected{% endif %}>
+                    {{ comp.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="small text-muted">Live Search</label>
+            <input type="text" id="directorySearch" class="form-control rounded-pill" placeholder="Search by name, email, or username...">
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <table class="table table-hover mb-0" id="userTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="user-row">
+                    <td>
+                        <div class="fw-bold text-dark">{{ user.username }}</div>
+                        <small class="text-muted">ID: {{ user.id }}</small>
+                    </td>
+                    <td>
+                        <span class="badge {% if user.role == 'driver' %}bg-info{% else %}bg-warning{% endif %} text-dark">
+                            {{ user.role | capitalize }}
+                        </span>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" 
+                                onclick="openInfoCard({{ user.id }}, '{{ user.role }}')">
+                            Manage
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 1. Live Search Logic (Filters table without reloading)
+    document.getElementById('directorySearch').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.user-row');
+
+        rows.forEach(row => {
+            let text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    });
+
+    // 2. Open Info Card (Placeholder for your Modal logic)
+    function openInfoCard(userId, role) {
+        console.log("Opening card for:", userId, "Role:", role);
+        // Trigger your modal here and load data via AJAX or fetch
+        $('#userManagementModal').modal('show');
+    }
+</script>
+{% endblock %}

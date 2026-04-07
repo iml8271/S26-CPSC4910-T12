@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash,check_password_hash
 from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverApplications
 from datetime import datetime
-from helpers import driver_create
+from helpers import *
 
 auth_bp = Blueprint("auth",__name__)
         
@@ -130,21 +130,13 @@ def handle_driver_signup():
 
 
         try:
-            new_user = driver_create(
-                username=username,
-                password=password,
-                email = email,
-                firstname=firstname,
-                lastname=lastname,
-                streetname=streetname,
-                city=city,
-                zipcode=zipcode,
-                company_id=company_id,
-                status="pending",
-                application_reason= "Sign Up"
-            )
-            flash(f"Driver {new_user.email} created successfully!", "success")
-            return redirect(url_for("auth.handle_login"))
+            new_driver = driver_create_signup(email=email,firstname=firstname,
+                                 lastname=lastname,username=username,
+                                 password=password,streetname=streetname,
+                                 city=city,zipcode=zipcode,company_id=company_id)
+            login_user(new_driver,remember=True)
+            flash(f"Welcome, {new_driver.driver_profile.firstname}! Your account is created and pending approval.", "success")
+            return redirect(url_for("dashboard"))
         except ValueError as ve:
             return render_template(
                 "driver/driver_signup.html",
@@ -225,9 +217,6 @@ def handle_sponsor_signup():
 
         return redirect(url_for("auth.handle_login"))
     return render_template("sponsor/sponsor_signup.html",companies=companies)
-
-
-
 
 # Forgot Password
 @auth_bp.route("/forgot_password", methods=["GET","POST"])

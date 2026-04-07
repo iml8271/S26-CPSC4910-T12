@@ -10,7 +10,7 @@ from reports import report_bp
 from routes.sponsor import sponsor_bp
 from routes.driver import driver_bp
 from routes.admin import admin_bp
-from models import db,Users,SponsorCompany
+from models import db,Users,SponsorCompany,DriverApplications
 from flask_migrate import Migrate
 from routes_invoice import invoice_bp
 import os
@@ -110,6 +110,9 @@ def about():
 def dashboard():
     if current_user.role == "driver":
         active_links = [link for link in g.profile.company_links if link.is_active]
+        if not active_links:
+            pending = DriverApplications.query.filter_by(user_id=current_user.id, status='pending').all()
+            return render_template("driver/driver_waitingroom.html", username=current_user.driver_profile.firstname, pending_apps=pending)
         return render_template(
             "driver/driver_dashboard.html", username=current_user.username,links=active_links,profile=g.profile)
     elif current_user.role == "sponsor":

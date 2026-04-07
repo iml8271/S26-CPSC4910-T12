@@ -9,7 +9,7 @@ from datetime import datetime
 from functools import wraps
 import csv
 import io
-from helpers import role_required,driver_create,driver_update_points,sponsor_create
+from helpers import *
 import os
 import requests
 
@@ -190,12 +190,12 @@ def driver_order_history():
     ]
     return render_template("driver/driver_order_history.html", items=items)
 
-@driver_bp.route("/driver_points_review")
+@driver_bp.route("/driver_pointsreview")
 def driver_points_review():
-    #filler for now, will use db when added.
-    points_log = [
-        {"date": "2024-01-15", "points": 100, "description": "Max Points, No Infractions"},
-        {"date": "2024-01-20", "points": 50, "description": "50 Points Deducted for Speeding"},
-        {"date": "2024-02-05", "points": 100, "description": "Max Points, No Infractions"},
-    ]
-    return render_template("driver/driver_points_review.html",points_log=points_log)
+    try:
+        driver_profile = g.profile
+        pts_history = DriverPointsHistory.query.filter(driver_profile.company_links)
+    except Exception as e:
+        db.session.rollback()
+        raise RuntimeError(f"Failed to find points: {str(e)}") from e
+    return render_template("driver/driver_points_review.html",points_log=pts_history)

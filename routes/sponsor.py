@@ -90,12 +90,10 @@ def sponsor_settings():
 ## ACTIVE DRIVER_LIST --------------------------------
 @sponsor_bp.route("/driver_list", methods=["GET","POST"])
 def view_drivers():
-    drivers = DriverProfile.query.join(DriverCompanyLink).filter(
-        DriverCompanyLink.company_id == g.profile.company_id,
-        DriverCompanyLink.is_active == True,
-        DriverProfile.is_active == True
-    ).all()
-    return render_template("sponsor/sponsor_view_drivers.html",drivers=drivers)
+    active_drivers = DriverCompanyLink.query.filter_by(
+        company_id=g.profile.company_id,
+        is_active=True ).join(DriverProfile).all()
+    return render_template("sponsor/sponsor_view_drivers.html",drivers=active_drivers)
 
 @sponsor_bp.route("/adjust_points", methods=["POST"])
 def adjust_points(sponsor_profile,driver_id):
@@ -131,6 +129,26 @@ def adjust_points(sponsor_profile,driver_id):
         flash(f"Unable to adjust points for Driver")
 
     return redirect(url_for("sponsor.view_drivers"))
+
+@sponsor_bp.route("/driver_list/update_points/<int:driver_id>", methods=["POST"])
+def update_points(driver_id):
+    try:
+        sponsor_profile = g.profile
+        points = request.form.get("points",0)
+        reason = request.form.get("reason", "Processed by Sponsor")
+        driver_change_points(driver_id=driver_id,
+            company_id=sponsor_profile.company_id,
+            points=int(points),
+            sponsor_id=sponsor_profile.user.id,
+            reason=reason)
+        db.session.commit()
+        flash("Points updated successfully!", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating points: {str(e)}", "danger")
+        
+    return redirect(url_for('sponsor.view_drivers'))
 
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
 def add_drivers():

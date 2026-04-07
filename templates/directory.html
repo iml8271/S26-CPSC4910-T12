@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>User Directory</title>
+<style>
+    /* Compact Card Styling */
+    .user-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #e0e0e0;
+        transition: transform 0.2s, shadow 0.2s;
+    }
+    .user-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    }
+    .role-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 4px 12px;
+    }
+    .driver-accent { border-top: 5px solid #64b5f6; } /* Soft Blue */
+    .sponsor-accent { border-top: 5px solid #ffb74d; } /* Soft Orange */
+    
+    .info-label { color: #9e9e9e; font-size: 0.75rem; margin-bottom: 2px; }
+    .info-value { color: #424242; font-size: 0.9rem; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <h2 style="color: #5d4037; font-weight: 800; margin-bottom: 5px;">User <span style="color: #ff9800;">Directory</span></h2>
+            <p class="text-muted mb-0">Manage your growing community of drivers and sponsors.</p>
+        </div>
+        <button class="btn btn-outline-dark rounded-pill px-4 shadow-sm" style="font-weight: 600;">+ New User</button>
+    </div>
+
+    <div class="row g-4">
+        {% for user in users %}
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="user-card h-100 p-4 shadow-sm {% if user.role == 'driver' %}driver-accent{% else %}sponsor-accent{% endif %}">
+                
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="role-label rounded-pill {% if user.role == 'driver' %}bg-light text-primary{% else %}bg-light text-warning{% endif %}">
+                        {{ user.role }}
+                    </span>
+                    <small class="text-muted" style="font-family: monospace;">ID#{{ user.id }}</small>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="mb-1" style="color: #424242; font-weight: 700;">
+                        {% if user.role == 'driver' %}
+                            {{ user.driver_profile.firstname }} {{ user.driver_profile.lastname }}
+                        {% else %}
+                            {{ user.sponsor_profile.firstname }} {{ user.sponsor_profile.lastname }}
+                        {% endif %}
+                    </h5>
+                    <div class="text-muted small text-truncate">{{ user.email }}</div>
+                </div>
+
+                <div class="mb-4 pt-3 border-top">
+                    <div class="info-label text-uppercase">
+                        {% if user.role == 'sponsor'%}
+                            Organization
+                        {% else %}
+                            Activity
+                        {% endif %}</div>
+                    <div class="info-value">
+                        {% if user.role == 'driver' and user.driver_profile.company_links %}
+                            Active
+                        {% elif user.role == 'sponsor' %}
+                            {{ user.sponsor_profile.company.name }}
+                        {% else %}
+                            <span class="text-muted fw-normal fst-italic">Unassigned</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <a href="{{ url_for('admin.view_profilecard', user_id=user.id) }}" 
+   class="btn btn-dark w-100 rounded-pill py-2 shadow-sm">
+                    Manage Profile
+            </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

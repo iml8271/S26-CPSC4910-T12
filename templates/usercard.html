@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Profile - {{ profile.username }}</title>
+<style>
+    .master-card {
+        background: #fff;
+        border-radius: 24px;
+        overflow: hidden;
+        border: none;
+    }
+    .profile-header {
+        background: #f8f9fa;
+        padding: 40px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+    }
+    .role-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        padding: 5px 15px;
+        margin-top: 10px;
+        display: inline-block;
+    }
+    .company-item {
+        transition: all 0.2s;
+        border: 1px solid #f0f0f0;
+    }
+    .company-item:hover {
+        background-color: #fffaf0;
+        border-color: #ff9800;
+    }
+    .btn-action {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 6px 20px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="card p-5 shadow rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        {% if profile.role == 'driver' %}
+            <h2 style="color: #ff9800; font-weight: 700;">Driver: {{ profile.driver_profile.firstname }}</h2>
+            
+            <h5 class="mt-4">Current Companies</h5>
+            <ul class="list-group mb-4">
+                {% for link in profile.driver_profile.company_links %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        {{ link.company.name }} — {{ link.current_points }} pts
+                        <button class="btn btn-sm btn-warning rounded-pill">Edit Points</button>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <h5 class="mt-4" style="color: #795548; font-weight: 700;">Available to Join</h5>
+            <div class="list-group shadow-sm rounded-4 overflow-hidden">
+                {% for company in all_companies %}
+                    {# Check: Is this company ID in the driver's current links? #}
+                    {% if company.id not in profile.driver_profile.company_links|map(attribute='company_id') %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0 border-bottom">
+                            <span class="fw-bold" style="color: #5d4037;">{{ company.name }}</span>
+                            
+                            <form action="{{ url_for('admin.apply_driver', user_id=profile.id, company_id=company.id) }}" method="POST" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-dark rounded-pill px-4 shadow-sm">
+                                    Auto-Link
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+        {% elif profile.role == 'sponsor' %}
+            <h2 style="color: #ff9800; font-weight: 700;">Sponsor: {{ profile.sponsor_profile.firstname }}</h2>
+            <p>Company: {{ profile.sponsor_profile.company.name }}</p>
+        {% endif %}
+    <div class="bg-light p-4 text-center">
+            <a href="{{ url_for('admin.directory') }}" class="text-decoration-none text-muted small fw-bold">
+                ← Back to User Directory
+            </a>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}
