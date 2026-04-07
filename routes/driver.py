@@ -158,7 +158,7 @@ def driver_catalog():
     results = requests.get(itunes_url, params=params)
     data = results.json()
 
-    return render_template("driver/driver_catalog.html", items=data['results'])
+    return render_template("driver/driver_catalog.html", profile=g.profile,items=data['results'])
 
 @driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])
 def driver_catalog_search():

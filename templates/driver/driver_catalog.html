@@ -1,57 +1,118 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Driver_Catalog</title>
+<title>Rewards Catalog</title>
+<style>
+    .action-card { transition: all 0.2s ease; cursor: pointer; }
+    .action-card:hover {
+        background-color: #fff !important;
+        border-color: #ff9800 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .catalog-card {
+        transition: transform 0.2s;
+        border: 2px solid #ffe0b2 !important;
+    }
+    .catalog-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        border-color: #ff9800 !important;
+    }
+    .cart-sticky {
+        position: sticky;
+        top: 20px;
+        border: 2px dashed #ffe0b2;
+        background-color: #fffaf0;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
+<div class="container py-5">
+    <div class="card pt-4 px-5 pb-5 shadow-lg rounded-4 border-0" style="max-width: 1100px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        
+        <div class="text-center mb-4">
+            <h2 style="color: #5d4037; font-weight: 700;">
+                Rewards <span style="color: #ff9800;">Catalog</span> 🛍️
+            </h2>
+            <p class="text-muted">Your Balance: <span style="color: #2e7d32; font-weight: 700;">{{ profile.current_points }} pts</span></p>
+        </div>
 
-  <p>Here's your Catalog {{ username }}</p><br>
-  <p>Your current balance: {{ points }} points</p>
-    <form action="{{ url_for('driver_catalog_search') }}" method="POST">
-  <label for="user-search">Search For::</label>
-  <input type="text" id="user-search" name="user_search" placeholder="Type something..."><br>
-        <label for="media_type"> What kind of media do you want to search for? </label>
-    <select name="media_type" id="media_type">
-        <option value="music">music</option>
-        <option value="podcast">podcast</option>
-        <option value="movie">movie</option>
-        <option value="audiobook">audiobook</option>
-        <option value="all">all</option>
-    </select>
+        <div class="p-4 rounded-4 mb-5" style="background-color: #fffaf0; border: 1px solid #ffe0b2;">
+            <form action="{{ url_for('driver.driver_catalog_search') }}" method="POST" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Search For</label>
+                    <input type="text" name="user_search" class="form-control rounded-pill border-0 shadow-sm" placeholder="Artists, movies, books...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Category</label>
+                    <select name="media_type" class="form-select rounded-pill border-0 shadow-sm">
+                        <option value="music">Music</option>
+                        <option value="movie">Movies</option>
+                        <option value="podcast">Podcasts</option>
+                        <option value="audiobook">Audiobooks</option>
+                        <option value="all">Everything</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn w-100 rounded-pill fw-bold" style="background-color: #ff9800; color: white;">Find</button>
+                </div>
+            </form>
+        </div>
 
-  <button type="submit">Search</button></form>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    {% for item in items %}
+                    <div class="col-sm-6">
+                        <div class="catalog-card p-3 rounded-4 shadow-sm bg-white h-100 d-flex flex-column">
+                            <img src="{{ item.artworkUrl100 }}" class="rounded-3 mb-3 w-100" style="aspect-ratio: 1/1; object-fit: cover;">
+                            
+                            <h6 class="mb-1 text-truncate" style="color: #5d4037; font-weight: 700;">{{ item.trackName or item.collectionName }}</h6>
+                            <p class="text-muted small mb-3">{{ item.primaryGenreName }}</p>
+                            
+                            {% set raw_price = item.trackPrice or item.collectionPrice or 0 %}
+                            {% set point_price = (raw_price * 10) | int %}
 
-  <p>Cart: <span id="cart-count">0</span> items</p>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span style="color: #2e7d32; font-weight: 800; font-size: 1.1rem;">{{ point_price }} <small style="font-size: 0.7rem;">pts</small></span>
+                                <div class="btn-group">
+                                    <button onclick="addToCart('{{ item.trackName|replace("'", "") }}', {{ point_price }})" class="btn btn-sm btn-outline-warning rounded-start-pill">+</button>
+                                    <button onclick="purchaseNow('{{ item.trackName|replace("'", "") }}', {{ point_price }})" class="btn btn-sm btn-warning text-white fw-bold rounded-end-pill px-3">Buy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-  <div class="catalog">
-    {% for item in items %}
-      <div class="catalog-item">
-        {# Display Artwork #}
-        <img src="{{ item.artworkUrl100 }}" alt="{{ item.trackName or item.collectionName }}">
+            <div class="col-lg-4">
+                <div class="cart-sticky p-4 rounded-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0" style="color: #5d4037; font-weight: 700; text-transform: uppercase;">Your Cart</h6>
+                        <span class="badge rounded-pill bg-warning text-white" id="cart-count">0</span>
+                    </div>
+                    
+                    <ul id="cart-items" class="list-unstyled small mb-4" style="max-height: 200px; overflow-y: auto;">
+                        <li class="text-muted fst-italic">Empty...</li>
+                    </ul>
 
-        <h3>{{ item.trackName or item.collectionName }}</h3>
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+                        <span class="fw-bold" style="color: #5d4037;">Total</span>
+                        <h4 class="mb-0" style="color: #2e7d32; font-weight: 800;"><span id="cart-total">0</span> <small style="font-size: 0.8rem;">pts</small></h4>
+                    </div>
 
-        <p><em>{{ item.primaryGenreName }}</em></p>
+                    <button onclick="checkoutCart()" class="btn w-100 rounded-pill mb-2 fw-bold" style="background-color: #ff9800; color: white;">Checkout</button>
+                    <button onclick="clearCart()" class="btn btn-link btn-sm w-100 text-decoration-none text-muted">Clear Items</button>
+                </div>
+            </div>
+        </div>
 
-        {% set price = item.trackPrice or item.collectionPrice or 0 %}
-        <p>Price: {{ price }} points</p>
-
-        <button onclick="purchaseNow('{{ item.trackName or item.collectionName }}', {{ price }})">Buy Now</button>
-        <button onclick="addToCart('{{ item.trackName or item.collectionName }}', {{ price }})">+ Cart</button>
-      </div>
-    {% endfor %}
-  </div>
-
-  <div>
-    <h3>Your Cart</h3>
-    <ul id="cart-items"></ul>
-    <p>Cart Total: <span id="cart-total">0</span> points</p>
-    <button onclick="checkoutCart()">Checkout</button>
-    <button onclick="clearCart()">Clear Cart</button>
-  </div>
-
+        <div class="text-center mt-5">
+            <a href="{{ url_for('dashboard') }}" class="text-muted small text-decoration-none">← Back to Dashboard</a>
+        </div>
+    </div>
 </div>
 
 <script type="text/javascript">
