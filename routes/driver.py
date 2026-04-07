@@ -11,6 +11,8 @@ import csv
 import io
 from helpers import *
 import os
+from models import Order, Order_Items
+from sqlalchemy import func
 import requests
 
 driver_bp = Blueprint("driver",__name__,url_prefix="/driver")
@@ -145,27 +147,34 @@ def driver_view_org_rules():
 @driver_bp.route("/dashboard/driver_catalog", methods=["GET"])
 def driver_catalog():
     #we can remove these after we make a catalog for sponors
-
+    driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active = True).first()
+    company = SponsorCompany.query.filter_by(id=driver.company_id).first()
+    priceMax = company.priceMax
+    explicit = company.explicit
+    explicitVal = "No"
     itunes_url = "https://itunes.apple.com/search"
+    if explicit:
+        explicitVal = "Yes"
+
 
     params = {
         "term": "Michael+Jackson",
         "media": "all",
         "limit": 50,
-        "explicit": "No"
+        "explicit": explicitVal
     }
 
     results = requests.get(itunes_url, params=params)
     data = results.json()
 
-    return render_template("driver/driver_catalog.html", profile=g.profile,items=data['results'])
+    return render_template("driver/driver_catalog.html",profile=g.profile, items=data['results'])
 
 @driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])
 def driver_catalog_search():
     term = request.form.get("user_search")
     term = term.replace(" ", "+")
     mediaType = request.form.get("media_type")
-
+    sortType = request.form.get("sort_type")
     itunes_url = "https://itunes.apple.com/search"
 
     params = {
@@ -177,8 +186,24 @@ def driver_catalog_search():
 
     results = requests.get(itunes_url, params=params)
     data = results.json()
+    items = data.get('results', [])
 
-    return render_template("driver/driver_catalog.html", items=data['results'])
+    if sortType == "Price (Asc)":
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)))
+    elif sortType == "Price (Desc)":
+        # Sort high to low
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)), reverse=True)
+    elif sortType == "Best Selling":
+        sales_query = db.session.query(Order_Items.product_name,
+                                       func.sum(Order_Items.quantity).label('total_sold')).group_by(
+            Order_Items.product_name).all()
+
+        sales_map = {name: total for name, total in sales_query}
+        items = sorted(items,
+                       key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
+                       reverse=True)
+
+    return render_template("driver/driver_catalog.html",profile=g.profile, items=items)
 
 @driver_bp.route("/driver_order_history")
 def driver_order_history():

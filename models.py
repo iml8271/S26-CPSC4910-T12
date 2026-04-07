@@ -193,6 +193,10 @@ class SponsorCompany(db.Model):
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")
     driver_links = db.relationship("DriverCompanyLink", back_populates="company")
 
+    #Catalog Rules
+    priceMax = db.Column(db.Integer, nullable=False, default=100)
+    explicit = db.Column(db.Boolean, nullable=False, default=True)
+
 class SponsorCompanyRules(db.Model):
     __tablename__ = "Sponsor_Org_Rules"
     #company and tracking info
@@ -296,3 +300,34 @@ class InvoiceItem(db.Model):
     points = db.Column(db.Integer, nullable=False)
     amount = db.Column(db.DECIMAL(10,2), nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False)
+
+##ORDERS-----------------------------
+class Order(db.Model):
+    __tablename__ = "orders"
+
+    #basic info
+    order_id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.now)
+
+    #source info
+    user_id = db.Column(db.Integer,db.ForeignKey('users.id'),nullable=False)
+    org_id = db.Column(db.Integer,db.ForeignKey('sponsor_companies.id'),nullable=False)
+
+    #order info
+    dollar_price = db.Column(db.DECIMAL(10,2),nullable=False)
+    point_price = db.Column(db.Integer ,nullable=False)
+
+class Order_Items(db.Model):
+    __tablename__ = "order_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # order information
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
+
+    # item information
+    product_name = db.Column(db.String(200), nullable=False)
+
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    unit_price_dollars = db.Column(db.DECIMAL(10, 2), nullable=False)
+    unit_price_points = db.Column(db.Integer, nullable=False)
