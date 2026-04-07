@@ -187,7 +187,7 @@ class SponsorCompany(db.Model):
     # "unit value" : 1 pt = X currency
     # ex. if 1 points is worht 5 cents, the value is 0.05
     # total value = pts x points_converstion
-    points_conversion = db.Column(db.DECIMAL(10,2),nullable=False,default=1)
+    points_conversion = db.Column(db.DECIMAL(10,2),nullable=False,default=.01)
 
     # Employees
     sponsor_users = db.relationship("SponsorProfile",back_populates="company")

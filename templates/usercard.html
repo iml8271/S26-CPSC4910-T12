@@ -42,10 +42,12 @@
 {% block body %}
 <div class="container py-5">
     <div class="card p-5 shadow rounded-4 border-0" style="max-width: 700px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
-        
         {% if profile.role == 'driver' %}
-            <h2 style="color: #ff9800; font-weight: 700;">Driver: {{ profile.driver_profile.firstname }}</h2>
-            
+            <h2 style="color: #ff9800; font-weight: 700;">Driver: {{ profile.driver_profile.firstname }} {{ profile.driver_profile.lastname }}</h2>
+        {% elif profile.role == 'sponsor' %}
+            <h2 style="color: #ff9800; font-weight: 700;">Sponsor: {{ profile.sponsor_profile.firstname }} {{ profile.sponsor_profile.lastname }}</h2>
+        {% endif %}
+        {% if profile.role == 'driver' %}
             <h5 class="mt-4">Current Companies</h5>
             <ul class="list-group mb-4">
                 {% for link in profile.driver_profile.company_links %}
@@ -75,9 +77,17 @@
             </div>
 
         {% elif profile.role == 'sponsor' %}
-            <h2 style="color: #ff9800; font-weight: 700;">Sponsor: {{ profile.sponsor_profile.firstname }}</h2>
             <p>Company: {{ profile.sponsor_profile.company.name }}</p>
         {% endif %}
+
+        <form action="{{ url_for('admin.delete_user', user_id=profile.id) }}" method="POST" 
+            onsubmit="return confirm('⚠️ Are you sure? This will permanently delete {{ profile.firstname }} and all their data?');">
+            <button type="submit" class="btn btn-sm rounded-pill px-3 mt-2" 
+                    style="background-color: #ffebee; color: #c62828; border: 1px solid #ffcdd2; font-weight: 600;">
+                Delete User
+            </button>
+        </form>    
+        <br>
     <div class="bg-light p-4 text-center">
             <a href="{{ url_for('admin.directory') }}" class="text-decoration-none text-muted small fw-bold">
                 ← Back to User Directory

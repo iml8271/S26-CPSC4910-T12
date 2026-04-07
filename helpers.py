@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from models import db,Users,DriverProfile,DriverApplications,DriverPointsHistory,SponsorProfile,DriverCompanyLink
+from models import *
 from werkzeug.security import generate_password_hash
 from sqlalchemy.orm.exc import DetachedInstanceError
 from functools import wraps
@@ -920,6 +920,8 @@ def sponsor_create(
 # ADMIN ---------
 def admin_create(
     email: str,
+    firstname: str,
+    lastname: str,
     username: str | None = None,
     password: str | None = None,
 ) -> Users:
@@ -943,7 +945,11 @@ def admin_create(
             username=username,
             password=hashed_password,
             email=email,
-            role="sponsor"
+            role="admin"
+        )
+        new_user.admin_profile = AdminProfile(
+            firstname = firstname,
+            lastname = lastname
         )
         db.session.add(new_user)
 
@@ -953,4 +959,4 @@ def admin_create(
     
     except Exception as e:
         db.session.rollback()
-        raise RuntimeError(f"Failed to create sponsor: {str(e)}") from e
+        raise RuntimeError(f"Failed to create admin: {str(e)}") from e

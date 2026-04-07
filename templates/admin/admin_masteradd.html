@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Master Signup</title>
+<style>
+    .role-section { display: none; transition: all 0.3s ease; }
+    .btn-outline-warning.active { background-color: #ff9800 !important; color: white !important; }
+    .form-section-title { 
+        border-left: 4px solid #ff9800; 
+        padding-left: 10px; 
+        margin: 25px 0 15px 0; 
+        color: #5d4037; 
+        font-weight: 700;
+    }
+    .choice-card {
+        cursor: pointer;
+        border: 2px solid #ffe0b2;
+        background: #fffaf0;
+        transition: 0.2s;
+    }
+    .choice-card:hover { border-color: #ff9800; background: #fff; }
+    .btn-check:checked + .choice-card {
+        border-color: #ff9800;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(255,152,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show rounded-pill shadow-sm mb-4 border-0 px-4" role="alert">
+        <div class="d-flex align-items-center">
+            {% if category == 'success' %}
+                <span class="me-2">✅</span>
+            {% else %}
+                <span class="me-2">⚠️</span>
+            {% endif %}
+            <small class="fw-bold">{{ message }}</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.7rem; top: 50%; transform: translateY(-50%);"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+<div class="container py-5">
+    <div class="card p-4 p-md-5 shadow-lg rounded-4 border-0 mx-auto" style="max-width: 700px; border-top: 5px solid #ff9800 !important;">
+        
+        <h2 class="text-center mb-1" style="color: #ff9800; font-weight: 800;">Master Creation Hub 🛠️</h2>
+        <p class="text-center text-muted mb-4">What would you like to add to the system today?</p>
+
+        <form id="master-form" method="POST" action="{{ url_for('admin.master_signup') }}">
+            
+            <div class="row g-2 mb-4">
+                {% set options = [
+                    ('driver', '🏎️', 'Driver'),
+                    ('sponsor', '💼', 'Sponsor'),
+                    ('admin', '🔑', 'Admin'),
+                    ('company', '🏢', 'Company')
+                ] %}
+                {% for val, icon, label in options %}
+                <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="creation_type" id="type-{{ val }}" value="{{ val }}" onchange="updateFormDisplay()" required>
+                    <label class="btn choice-card w-100 rounded-4 py-3" for="type-{{ val }}">
+                        <div style="font-size: 1.5rem;">{{ icon }}</div>
+                        <div class="small fw-bold text-uppercase mt-1">{{ label }}</div>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="form-content" style="display: none;">
+                
+                <div id="user-core-fields">
+                    <h5 class="form-section-title">Account Credentials</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="firstname" class="form-control rounded-pill" placeholder="First Name">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" name="lastname" class="form-control rounded-pill" placeholder="Last Name">
+                        </div>
+                        <div class="col-12">
+                            <input type="email" name="email" class="form-control rounded-pill" placeholder="Email Address">
+                        </div>
+                        <div class="col-12">
+                            <input type="password" name="password" class="form-control rounded-pill" placeholder="Temporary Password">
+                        </div>
+                    </div>
+                </div>
+                <!--
+                <div id="fields-driver" class="role-section">
+                    <h5 class="form-section-title">Driver Address</h5>
+                    <div class="mb-3">
+                        <input type="text" name="streetname" class="form-control rounded-pill" placeholder="Street Address">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-8"><input type="text" name="city" class="form-control rounded-pill" placeholder="City"></div>
+                        <div class="col-4"><input type="text" name="zipcode" class="form-control rounded-pill" placeholder="Zip"></div>
+                    </div>
+                </div>
+                -->
+                <div id="fields-sponsor" class="role-section">
+                    <h5 class="form-section-title">Assign to Company</h5>
+                    <select name="company_id" class="form-select rounded-pill">
+                        <option selected disabled>Select Sponsor...</option>
+                        {% for comp in all_companies %}
+                            <option value="{{ comp.id }}">{{ comp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+
+                <div id="fields-company" class="role-section">
+                    <h5 class="form-section-title">New Company Details</h5>
+                    <div class="mb-3">
+                        <label class="small fw-bold ms-2">Company Name</label>
+                        <input type="text" name="org_name" class="form-control rounded-pill" placeholder="e.g. Speedsters Inc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold ms-2">Point Value (1 Pt = $?)</label>
+                        <input type="number" step="0.01" name="point_value" class="form-control rounded-pill" placeholder="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold ms-2">Email</label>
+                        <input type="text" name="org_email" class="form-control rounded-pill" placeholder="company@company.co">
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold ms-2">Phone</label>
+                        <input type="text" name="phone" class="form-control rounded-pill" placeholder="(864)">
+                    </div>
+                </div>
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-warning btn-lg rounded-pill text-white fw-bold shadow-sm">
+                        Create Record
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateFormDisplay() {
+    const type = document.querySelector('input[name="creation_type"]:checked').value;
+    const formContent = document.getElementById('form-content');
+    const userCore = document.getElementById('user-core-fields');
+    
+    // Show the main container
+    formContent.style.display = 'block';
+
+    // Toggle User Core (Admins, Drivers, Sponsors need it. Orgs do not.)
+    userCore.style.display = (type === 'company') ? 'none' : 'block';
+
+    // Hide all specific sections first
+    document.querySelectorAll('.role-section').forEach(sec => sec.style.display = 'none');
+
+    // Show the specific one selected
+    const target = document.getElementById('fields-' + type);
+    if (target) target.style.display = 'block';
+}
+</script>
+{% endblock %}

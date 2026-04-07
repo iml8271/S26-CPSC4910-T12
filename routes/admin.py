@@ -7,6 +7,7 @@ from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverPo
 from helpers import *
 import csv
 from sqlalchemy import or_,not_
+from decimal import Decimal
 
 admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
 
@@ -28,6 +29,48 @@ def restrict_to_admin():
         flash("Admin profile not found. Please contact an admin.", "danger")
         return redirect(url_for('dashboard'))
     
+@admin_bp.route("/master_signup", methods=["GET","POST"])
+def master_signup():
+    all_companies = SponsorCompany.query.all()
+    if request.method == "POST":
+        try:
+            role = request.form.get("creation_type")
+            if role == "company":
+                name = request.form.get("org_name").strip()
+                pv = request.form.get("point_value").strip()
+                phone = request.form.get("phone").strip()
+                email = request.form.get("org_email").strip()
+                new_company = SponsorCompany(name=name,
+                    email=email,
+                    phone=phone,
+                    points_conversion=Decimal(pv))
+                db.session.add(new_company)
+                db.session.commit()
+                print("Created Company")
+                flash(f"Created Company: {name}", "success")
+            else:
+                firstname = request.form.get("firstname").strip()
+                lastname = request.form.get("lastname").strip()
+                email = request.form.get("email").strip()
+                password = request.form.get("password").strip()
+
+                if role == "admin":
+                    admin_create(email=email,firstname=firstname,
+                        lastname=lastname,password=password)
+                elif role == "sponsor":
+                    company_id = request.form.get("company_id")
+                    sponsor_create(email=email,firstname=firstname,lastname=lastname,
+                        password=password,company_id=company_id)
+                elif role == "driver":
+                    driver_create_profile(email=email,firstname=firstname,lastname=lastname,
+                        username=generate_unique_username(email),password=password)
+                db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error: {str(e)}", "danger")
+            print(f"Error: {e}")
+    return render_template("admin/admin_masteradd.html",all_companies=all_companies)
+
 @admin_bp.route("/sponsor_list", methods=["GET","POST"])
 def admin_sponsor_list():
     sponsors = SponsorProfile.query.all()
@@ -82,7 +125,19 @@ def apply_driver(user_id,company_id):
     return redirect(url_for('admin.view_profilecard',user_id=user_id))
 
 
-
+@admin_bp.route("/profile-card/<int:user_id>/delete", methods=["POST"])
+def delete_user(user_id):
+    user = Users.query.get_or_404(user_id)
+    
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        # flash(f"User {user.username} deleted successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        # flash(f"Error deleting user: {str(e)}", "danger")
+        print("Delete Errdor")
+    return redirect(url_for('admin.directory'))
 
 @admin_bp.route("/bulk_upload", methods=["GET","POST"])
 def bulk_upload():    
