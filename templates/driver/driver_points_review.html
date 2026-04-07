@@ -1,28 +1,104 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Driver Points Review</title>
+<title>Points History</title>
+<style>
+    .history-card {
+        background: #fff;
+        border-radius: 20px;
+        border-top: 6px solid  #ff9800 !important; 
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        color: #795548;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: none;
+    }
+    .point-badge {
+        font-weight: 700;
+        padding: 5px 12px;
+        min-width: 60px;
+        display: inline-block;
+        text-align: center;
+    }
+    .company-name {
+        color: #5d4037;
+        font-weight: 700;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-
-<h1>Points History</h1>
-<p>Your balance is {{ points }}</p>
-<p> Max Available Daily Points: 100</p>
-<p>Here is a review of your recent points activity:</p>
-
-<div class="points log">
-    
-
-    {% for entry in points_log %}
-        <div class="points-entry">
-            <p>Date: {{ entry.date }}</p>
-            <p>Points Earned: {{ entry.points}}</p>
-            <p>Description: {{ entry.description }}</p>
-            <button>Dispute</button>
+<div class="container py-5">
+    <div class="history-card p-4 p-md-5 shadow-lg border-0 mx-auto" style="max-width: 900px;">
+        
+        <div class="mb-4">
+            <h2 style="color: #424242; font-weight: 800; margin-bottom: 5px;">Points <span style="color:  #ff9800;">Log</span></h2>
+            <p class="text-muted mb-0">Every adjustment made to your account balances.</p>
         </div>
-    {% endfor %}
 
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Date</th>
+                        <th>Sponsor Company</th>
+                        <th class="text-center">Adjustment</th>
+                        <th class="text-center">New Balance</th>
+                        <th class="pe-3">Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pts_history %}
+                    <tr>
+                        <td class="ps-3 text-muted small">
+                            {{ item.update_date.strftime('%b %d, %Y') }}
+                        </td>
+                        <td>
+                            <span class="company-name">{{ item.link.company.name }}</span>
+                        </td>
+                        <td class="text-center">
+                            {# Cute logic for positive vs negative badges #}
+                            {% if item.points_change > 0 %}
+                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle point-badge">
+                                    +{{ item.points_change }}
+                                </span>
+                            {% elif item.points_change < 0 %}
+                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle point-badge">
+                                    {{ item.points_change }}
+                                </span>
+                            {% else %}
+                                <span class="badge rounded-pill bg-light text-muted border point-badge">
+                                    0
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center fw-bold text-dark">
+                            {{ item.current_points }}
+                        </td>
+                        <td class="pe-3 text-muted small">
+                            {{ item.reason }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted fst-italic">
+                            No point adjustments found yet. Keep on driving!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                ← Back to Dashboard
+            </a>
+            <span class="text-muted small">Total Records: {{ points_log|length }}</span>
+        </div>
+    </div>
 </div>
 {% endblock %}

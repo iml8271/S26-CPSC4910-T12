@@ -190,12 +190,15 @@ def driver_order_history():
     ]
     return render_template("driver/driver_order_history.html", items=items)
 
-@driver_bp.route("/driver_pointsreview")
+@driver_bp.route("/driver_points_review")
 def driver_points_review():
     try:
         driver_profile = g.profile
-        pts_history = DriverPointsHistory.query.filter(driver_profile.company_links)
+        link_ids = [link.id for link in driver_profile.company_links]
+
+        pts_history = DriverPointsHistory.query.filter(DriverPointsHistory.link_id.in_(link_ids)
+        ).order_by(DriverPointsHistory.update_date.desc()).all()
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Failed to find points: {str(e)}") from e
-    return render_template("driver/driver_points_review.html",points_log=pts_history)
+    return render_template("driver/driver_points_review.html",pts_history=pts_history)
