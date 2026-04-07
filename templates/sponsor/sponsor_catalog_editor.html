@@ -20,7 +20,7 @@
 
 
 <h2>Min and Max Point Range</h2>
-<form method="POST" action="{{ url_for('sponsor_catalog_set_price_range') }}">
+<form method="POST" action="{{ url_for('sponsor.sponsor_catalog_set_price_range') }}">
   <label>Minimum Point: <input type="number" name="min_price" value="{{ min_price or 0 }}" min="0"></label>
   <label>Maximum Points (pts): <input type="number" name="max_price" value="{{ max_price or 10000 }}" min="0"></label>
   <button type="submit">Set Range</button>
@@ -30,7 +30,7 @@
 
 
 <h2>Add New Item</h2>
-<form method="POST" action="{{ url_for('sponsor_catalog_add') }}">
+<form method="POST" action="{{ url_for('sponsor.sponsor_catalog_add') }}">
   <input type="text" name="name" placeholder="Item Name" required>
   <input type="text" name="description" placeholder="Description">
   <input type="number" name="price" placeholder="Point Cost" min="0" required>
@@ -51,7 +51,7 @@
   <tbody>
     {% for item in items %}
     <tr>
-      <form method="POST" action="{{ url_for('sponsor_catalog_edit', item_index=loop.index0) }}">
+      <form method="POST" action="{{ url_for('sponsor.sponsor_catalog_edit', item_index=loop.index0) }}">
         <td><input type="text" name="name" value="{{ item.name }}"></td>
         <td><input type="text" name="description" value="{{ item.description or '' }}"></td>
         <td><input type="number" name="price" value="{{ item.price }}" min="0"></td>
@@ -61,7 +61,7 @@
         </td>
       </form>
     </tr>
-    <form id="delete-{{ loop.index0 }}" method="POST" action="{{ url_for('sponsor_catalog_delete', item_index=loop.index0) }}" onsubmit="return confirm('Delete this item?')"></form>
+    <form id="delete-{{ loop.index0 }}" method="POST" action="{{ url_for('sponsor.sponsor_catalog_delete', item_index=loop.index0) }}" onsubmit="return confirm('Delete this item?')"></form>
     {% endfor %}
   </tbody>
 </table>

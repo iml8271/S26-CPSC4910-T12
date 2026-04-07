@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Browse Products</title>
+{% endblock %}
+
+
+{% block body %}
+<div class="container py-5">
+    <div class="card p-4 shadow-sm rounded-4 border-0 mb-4" style="border-top: 5px solid #ff9800;">
+        <h3 class="fw-bold" style="color: #5d4037;">Find Products 🔍</h3>
+        <form action="{{ url_for('sponsor.search_api') }}" method="GET" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control rounded-pill" placeholder="Search (e.g. Phone, Dog Food...)" value="{{ request.args.get('q', '') }}">
+            <button type="submit" class="btn btn-warning rounded-pill text-white px-4 fw-bold">Search</button>
+        </form>
+    </div>
+
+    <div class="row g-3">
+        {% for item in items %}
+        <div class="col-6 col-md-3">
+            <div class="card h-100 rounded-4 border-0 shadow-sm p-3" style="background: #fffaf0;">
+                <img src="{{ item.thumbnail }}" class="rounded-3 mb-2 w-100" style="aspect-ratio: 1/1; object-fit: cover;">
+                <h6 class="text-truncate fw-bold mb-1">{{ item.title }}</h6>
+                <p class="small text-success fw-bold mb-2">${{ item.price }}</p>
+                
+                <form action="" method="POST">
+                    <input type="hidden" name="api_id" value="{{ item.id }}">
+                    <input type="hidden" name="title" value="{{ item.title }}">
+                    <input type="hidden" name="thumbnail" value="{{ item.thumbnail }}">
+                    <button type="submit" class="btn btn-sm btn-success w-100 rounded-pill fw-bold">Add to Catalog</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

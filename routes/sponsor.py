@@ -9,6 +9,7 @@ import csv
 import io
 from helpers import *
 import os
+import requests
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
@@ -408,6 +409,19 @@ def driver_reject():
 
     return redirect(url_for("sponsor.pending_drivers"))
 
+# CATALOG --------------------
+@sponsor_bp.route("/search_api",methods=["GET","POST"])
+def search_api():
+    try:
+        api_url = "https://dummyjson.com/products"
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            data = response.json().get("products",[])
+    except Exception as e:
+        print("Reaching API failed")
+    return render_template("sponsor/sponsor_search_api.html", items=data)
+
+
 # ORGANIZATION RULES --------------------------------------
 @sponsor_bp.route("/organization/rules", methods=["GET"])
 def view_org_rules():
@@ -455,6 +469,7 @@ catalog_price_range = {"min": 0, "max": 10000}
 @sponsor_bp.route("/sponsor/sponsor_catalog_editor")
 def sponsor_catalog_editor():
     return render_template("sponsor/sponsor_catalog_editor.html", items=catalog_items)
+
 @sponsor_bp.route('/sponsor/sponsor_catalog/set-price-range', methods=['POST'])
 def sponsor_catalog_set_price_range():
     min_price = int(request.form.get("min_price", 0))
@@ -468,14 +483,14 @@ def sponsor_catalog_set_price_range():
     catalog_price_range["max"] = max_price
 
     flash(f'Point range: {min_price} - {max_price} pts')
-    return redirect(url_for('sponsor_catalog_editor'))
+    return redirect(url_for('sponsor.sponsor_catalog_editor'))
 
 @sponsor_bp.route("/sponsor/sponsor_catalog_editor/add", methods=["POST"])
 def sponsor_catalog_add():
     price = int(request.form.get("price"))
     if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
         flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
-        return redirect(url_for("sponsor_catalog_editor"))
+        return redirect(url_for("sponsor.sponsor_catalog_editor"))
 
     catalog_items.append({
         "name": request.form.get("name"),
@@ -483,14 +498,14 @@ def sponsor_catalog_add():
         "price": int(request.form.get("price"))
     })
     flash("item added successfully")
-    return redirect(url_for("sponsor_catalog_editor"))
+    return redirect(url_for("sponsor.sponsor_catalog_editor"))
 
 @sponsor_bp.route("/sponsor/sponsor_catalog_editor/edit/<int:item_index>", methods=["POST"])
 def sponsor_catalog_edit(item_index):
     price = int(request.form.get("price"))
     if price < catalog_price_range["min"] or price > catalog_price_range["max"]:
         flash(f"Price must be between {catalog_price_range['min']} and {catalog_price_range['max']} pts.")
-        return redirect(url_for("sponsor_catalog_editor"))
+        return redirect(url_for("sponsor.sponsor_catalog_editor"))
 
     if 0 <= item_index < len(catalog_items):
         catalog_items[item_index] = {
@@ -499,14 +514,14 @@ def sponsor_catalog_edit(item_index):
             "price": int(request.form.get("price"))
         }
         flash("Item price changed sucessfuly")
-    return redirect(url_for("sponsor_catalog_editor"))
+    return redirect(url_for("sponsor.sponsor_catalog_editor"))
 
 @sponsor_bp.route("/sponsor/sponsor_catalog_editor/delete/<int:item_index>", methods=["POST"])
 def sponsor_catalog_delete(item_index):
     if 0 <= item_index < len(catalog_items):
         catalog_items.pop(item_index)
         flash("Item deleted successfully yay!")
-    return redirect(url_for("sponsor_catalog_editor"))
+    return redirect(url_for("sponsor.sponsor_catalog_editor"))
 
 @sponsor_bp.route("/sponsor/reports/points",methods=["GET"])
 def points_report():

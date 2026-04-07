@@ -204,6 +204,20 @@ class SponsorCompanyRules(db.Model):
     #the rule itself
     rule = db.Column(db.String(255), nullable = False)
 
+class SponsorCatalog(db.Model):
+    __tablename__ = 'sponsor_catalog'
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('sponsor_companies.id'), nullable=False)
+    
+    # Store the unique ID from the API
+    api_item_id = db.Column(db.String(100), nullable=False)
+    
+    item_name = db.Column(db.String(255), nullable=False)
+    item_image_url = db.Column(db.String(500))
+    
+    # Relationship to the company
+    company = db.relationship('SponsorCompany', backref=db.backref('catalog_items', cascade="all, delete-orphan"))
+
 
 ## SUPPORT -----
 class SupportRequest(db.Model):
