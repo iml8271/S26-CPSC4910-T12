@@ -1,66 +1,81 @@
 {% extends "base.html" %}
 
-{% block head %}
-<title>Driver Order History</title>
-{% endblock %}
-
 {% block body %}
-<div class="center-body-div">
+<div class="container py-5">
+    <div class="card shadow-lg rounded-4 border-0 p-5" style="border-top: 5px solid #ff9800 !important;">
 
-    <h1>Order History</h1>
-    <p>Here is a review of your past orders:</p>
+        <div class="mb-4">
+            <h2 style="color: #5d4037; font-weight: 700;">Order <span style="color: #ff9800;">History</span> 📜</h2>
+            <p class="text-muted">Review your past rewards redemptions.</p>
+        </div>
 
-    <label for="sortingOption">Sort By</label>
-    <select id="sortingOption" onchange="sortOrders()">
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
-        <option value="most-points">Most Points</option>
-        <option value="least-points">Least Points</option>
-    </select>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Total (USD)</th>
+                        <th>Total (Points)</th>
+                        <th class="text-center">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="fw-bold text-muted">#{{ order.order_id }}</td>
+                        <td>{{ order.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>${{ "{:,.2f}".format(order.dollar_price) }}</td>
+                        <td><span class="badge bg-success">{{ order.point_price }} pts</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-warning rounded-pill px-3"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#items-{{ order.order_id }}">
+                                View Items
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="items-{{ order.order_id }}">
+                        <td colspan="5" class="bg-light p-0">
+                            <div class="p-3">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <thead>
+                                        <tr class="text-muted small text-uppercase">
+                                            <th>Product Name</th>
+                                            <th>Qty</th>
+                                            <th>(Points)</th>
+                                            <th>Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in order.items %}
+                                        <tr>
+                                            <td>{{ item.product_name }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>{{ item.unit_price_points }}</td>
+                                            <td class="fw-bold">{{ item.quantity * item.unit_price_points }} pts</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No orders found. Time to go shopping!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-
-
-    <div class="orderedHistory">
-        {% for entry in order_log %}
-            <div class="orderedItem"
-                    data-name="{{ entry.name }}"
-                    data-price="{{ entry.points }}"
-                    data-date="{{ entry.date }}">
-
-                <p>Item: {{ entry.name }}</p>
-                <p>Price: {{ entry.points}}</p>
-                <p>Date: {{ entry.date }}</p>
-                <button>Return Item?</button>
-            </div>
-        {% endfor %}
-
+        <div class="text-center mt-5">
+            <a href="{{ url_for('driver.driver_catalog') }}" class="btn btn-warning rounded-pill fw-bold text-white px-4">Back to Catalog</a>
+        </div>
     </div>
 </div>
-
-<script type="text/javascript">
-function sortOrders(){
-    const sortingOption = document.getElementById('sortOption').value;
-    const orderedHistory = document.getElementById('orderList');
-    const entries = Array.from(orderedHistory.getElementsByClassName('order-entry'));
-
-    entries.sort((a, b) => {
-    switch(sortOption) {
-      case 'newest':
-        return new Date(b.dataset.date) - new Date(a.dataset.date);
-      case 'oldest':
-        return new Date(a.dataset.date) - new Date(b.dataset.date);
-      case 'most-points':
-        return parseInt(b.dataset.points) - parseInt(a.dataset.points);
-      case 'least-points':
-        return parseInt(a.dataset.points) - parseInt(b.dataset.points);
-      case 'name-az':
-        return a.dataset.name.localeCompare(b.dataset.name);
-      case 'name-za':
-        return b.dataset.name.localeCompare(a.dataset.name);
-    });
-
-    entries.forEach(entry => orderList.appendChild(entry));
-}
-
-</script>
 {% endblock %}

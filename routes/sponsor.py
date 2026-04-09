@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app,g
+from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app,g, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -593,3 +593,39 @@ def sponsor_driver_catalog_search(id_driver):
                        reverse=True)
 
     return render_template("sponsor/sponsor_driver_catalog.html",profile=driver, items=items, points = driver_points)
+
+
+@sponsor_bp.route('/place_order/<int:id_driver>', methods=['POST'])
+def place_order(id_driver):
+    data = request.get_json()
+    driver_link = DriverCompanyLink.query.filter_by(
+        driver_id=id_driver,
+        is_active=True
+    ).first()
+    if driver_link.current_points < data['total_points']:
+        return jsonify({"status": "error", "message": "Insufficient points balance."})
+
+    new_order = Order(
+        user_id=id_driver,
+        org_id=driver_link.company_id,
+        dollar_price=data['total_dollars'],
+        point_price=data['total_points'],
+        date=datetime.now()
+    )
+    db.session.add(new_order)
+    db.session.flush()
+
+    for item in data['items']:
+        new_item = Order_Items(
+            order_id=new_order.order_id,
+            product_name=item['name'],
+            quantity=item['qty'],
+            unit_price_dollars=item['price_usd'],
+            unit_price_points=item['price_pts']
+        )
+        db.session.add(new_item)
+
+    driver_link.current_points -= data['total_points']
+
+    db.session.commit()
+    return jsonify({"status": "success", "order_id": new_order.order_id})

@@ -304,7 +304,7 @@ class InvoiceItem(db.Model):
 ##ORDERS-----------------------------
 class Order(db.Model):
     __tablename__ = "orders"
-
+    items = db.relationship('Order_Items', backref='order', lazy=True)
     #basic info
     order_id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.now)

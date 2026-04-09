@@ -181,19 +181,45 @@
     initCart();
   }
 
-  function checkoutCart() {
+  async function checkoutCart() {
     if (cart.length === 0) {
-      alert('Your cart is empty!');
-      return;
+        alert('Your cart is empty!');
+        return;
     }
-    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-    if (total > userPoints) {
-      alert('Not enough points to complete this purchase!');
-      return;
+
+    const totalPoints = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    if (totalPoints > userPoints) {
+        alert('You do not have enough points for this order.');
+        return;
     }
-    alert(`Checkout successful! Spent ${total} points.`);
-    clearCart();
-  }
+
+    const orderData = {
+        total_points: totalPoints,
+        total_dollars: (totalPoints / 10).toFixed(2),
+        items: cart.map(item => ({
+            name: item.name,
+            qty: item.qty,
+            price_pts: item.price,
+            price_usd: (item.price / 10).toFixed(2)
+        }))
+    };
+
+    const response = await fetch("{{ url_for('driver.place_order') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+    });
+
+    if (response.ok) {
+        const result = await response.json();
+        alert('Success! Order #' + result.order_id + ' has been placed.');
+        clearCart();
+        location.reload();
+    } else {
+        const error = await response.json();
+        alert('Order failed: ' + error.message);
+    }
+}
 </script>
 
 {% endblock %}

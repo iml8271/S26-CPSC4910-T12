@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app,g
+from flask import Flask, Blueprint,render_template, request, redirect, url_for, session,abort,flash, current_app,g, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
@@ -209,13 +209,10 @@ def driver_catalog_search():
 
 @driver_bp.route("/driver_order_history")
 def driver_order_history():
-    #we can remove these after we update database
-    items = [
-        {"name": "Jar Of Dirt", "price": 1, "date": "02/09/26"},
-        {"name": "CV Radio", "price": 1500, "date": "06/21/87"},
-        {"name": "$50 Taco Bell Gift Card", "price": 3000, "date": "09/01/20"},
-    ]
-    return render_template("driver/driver_order_history.html", items=items)
+    orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.date.desc()).all()
+
+
+    return render_template("driver/driver_order_history.html", orders=orders, profile=g.profile)
 
 @driver_bp.route("/driver_points_review")
 def driver_points_review():
@@ -229,3 +226,40 @@ def driver_points_review():
         db.session.rollback()
         raise RuntimeError(f"Failed to find points: {str(e)}") from e
     return render_template("driver/driver_points_review.html",pts_history=pts_history)
+
+
+@driver_bp.route('/place_order', methods=['POST'])
+def place_order():
+    data = request.get_json()
+    driver_link = DriverCompanyLink.query.filter_by(
+        driver_id=current_user.id,
+        is_active=True
+    ).first()
+    if driver_link.current_points < data['total_points']:
+        return jsonify({"status": "error", "message": "Insufficient points balance."})
+
+
+    new_order = Order(
+        user_id=current_user.id,
+        org_id=driver_link.company_id,
+        dollar_price=data['total_dollars'],
+        point_price=data['total_points'],
+        date=datetime.now()
+    )
+    db.session.add(new_order)
+    db.session.flush()
+
+    for item in data['items']:
+        new_item = Order_Items(
+            order_id=new_order.order_id,
+            product_name=item['name'],
+            quantity=item['qty'],
+            unit_price_dollars=item['price_usd'],
+            unit_price_points=item['price_pts']
+        )
+        db.session.add(new_item)
+
+    driver_link.current_points -= data['total_points']
+
+    db.session.commit()
+    return jsonify({"status": "success", "order_id": new_order.order_id})
