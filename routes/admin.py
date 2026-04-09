@@ -8,6 +8,9 @@ from helpers import *
 import csv
 from sqlalchemy import or_,not_
 from decimal import Decimal
+from audit import log_audit_event
+from datetime import datetime
+
 
 admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
 
@@ -46,6 +49,8 @@ def master_signup():
                     points_conversion=Decimal(pv))
                 db.session.add(new_company)
                 db.session.commit()
+                log_audit_event("company_created", user_id=current_user.id, username=current_user.username,
+                                details=f"Company: {name}")
                 print("Created Company")
                 flash(f"Created Company: {name}", "success")
             else:
@@ -65,6 +70,9 @@ def master_signup():
                     driver_create_profile(email=email,firstname=firstname,lastname=lastname,
                         username=generate_unique_username(email),password=password)
                 db.session.commit()
+                log_audit_event("account_created", user_id=current_user.id, username=current_user.username,
+                                details=f"Admin created {role}: {email}")
+
         except Exception as e:
             db.session.rollback()
             flash(f"Error: {str(e)}", "danger")
@@ -132,6 +140,8 @@ def delete_user(user_id):
     try:
         db.session.delete(user)
         db.session.commit()
+        log_audit_event("account_deleted", user_id=current_user.id, username=current_user.username,
+                        details=f"Deleted user: {user.username} (ID: {user_id})")
         # flash(f"User {user.username} deleted successfully.", "success")
     except Exception as e:
         db.session.rollback()
@@ -340,3 +350,35 @@ def bulk_upload():
         processed=True  # A flag to show the results div
         )
     return render_template("admin/admin_bulk_upload.html")
+
+
+@admin_bp.route("/audit-log")
+def view_audit_log():
+    from models import AuditLog
+    page = request.args.get('page', 1, type=int)
+    per_page = 25
+    event_filter = request.args.get('event_type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+
+    query = AuditLog.query.order_by(AuditLog.timestamp.desc())
+
+    if event_filter:
+        query = query.filter(AuditLog.event_type == event_filter)
+    if date_from:
+        query = query.filter(AuditLog.timestamp >= datetime.strptime(date_from, '%Y-%m-%d'))
+    if date_to:
+        query = query.filter(AuditLog.timestamp <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    event_types = db.session.query(AuditLog.event_type).distinct().order_by(AuditLog.event_type).all()
+    event_types = [e[0] for e in event_types]
+
+    return render_template("admin/audit_log.html",
+                           logs=pagination.items,
+                           pagination=pagination,
+                           event_types=event_types,
+                           current_filter=event_filter,
+                           date_from=date_from,
+                           date_to=date_to)

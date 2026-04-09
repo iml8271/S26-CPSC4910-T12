@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from models import db,Users,DriverProfile,SponsorCompany,SponsorProfile,DriverApplications
 from datetime import datetime
 from helpers import *
+from audit import log_audit_event
 
 auth_bp = Blueprint("auth",__name__)
         
@@ -21,6 +22,7 @@ def handle_login():
 
         if user and check_password_hash(user.password, password):
             login_user(user)
+            log_audit_event("login_success", user_id=user.id, username=user.username)
             return redirect(url_for("dashboard"))
             """dashboards = {
                 "admin": "view_admin_dashboard",
@@ -29,6 +31,7 @@ def handle_login():
             }
             return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))"""
         else:
+            log_audit_event("login_failed", username=username, details="Invalid credentials")
             return render_template("auth/login.html", error="Invalid username or password")
     return render_template("auth/login.html") 
 
@@ -36,6 +39,7 @@ def handle_login():
 @auth_bp.route("/logout")
 @login_required
 def handle_logout():
+    log_audit_event("logout", user_id=current_user.id, username=current_user.username)
     logout_user()
     return redirect(url_for("auth.handle_login")) 
 
@@ -71,6 +75,7 @@ def handle_signup():
         new_user = Users(username=username, password=hashed_password,email=email,role=role,creation_date = created_at)
         db.session.add(new_user)
         db.session.commit()
+        log_audit_event("account_created", user_id=new_user.id, username=new_user.username, details=f"Role: {role}")
         return redirect(url_for("auth.handle_login"))
     return render_template("auth/signup.html")
 
@@ -135,6 +140,8 @@ def handle_driver_signup():
                                  password=password,streetname=streetname,
                                  city=city,zipcode=zipcode,company_id=company_id)
             login_user(new_driver,remember=True)
+            log_audit_event("account_created", user_id=new_driver.id, username=new_driver.username,
+                            details="Driver self-signup")
             flash(f"Welcome, {new_driver.driver_profile.firstname}! Your account is created and pending approval.", "success")
             return redirect(url_for("dashboard"))
         except ValueError as ve:
@@ -214,6 +221,8 @@ def handle_sponsor_signup():
         )
         db.session.add(new_user)
         db.session.commit()
+        log_audit_event("account_created", user_id=new_user.id, username=new_user.username,
+                        details="Sponsor self-signup")
 
         return redirect(url_for("auth.handle_login"))
     return render_template("sponsor/sponsor_signup.html",companies=companies)
@@ -241,6 +250,7 @@ def handle_forgot_password():
         if user:
             user.password = generate_password_hash(password,method="pbkdf2:sha256")
             db.session.commit()
+            log_audit_event("password_reset", user_id=user.id, username=user.username, details="Via forgot password")
 
         return redirect(url_for("auth.handle_login"))
     return render_template("auth/forgotpassword.html")

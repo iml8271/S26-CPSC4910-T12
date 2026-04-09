@@ -28,7 +28,6 @@ def supportrequests():
 
     return render_template("admin/reports/admin_reports_supp_req.html", tallies=tallied_requests)
 
-
 @report_bp.route("/reports/drivers",methods=["GET"])
 @login_required
 def driver_report():
@@ -46,3 +45,35 @@ def points_report():
         .all()
 
     return render_template("admin/reports/admin_points_report.html", history=request)
+
+@report_bp.route("/audit-log")
+def audit_log():
+    from models import AuditLog
+    from datetime import datetime
+    page = request.args.get('page', 1, type=int)
+    per_page = 25
+    event_filter = request.args.get('event_type', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+
+    query = AuditLog.query.order_by(AuditLog.timestamp.desc())
+
+    if event_filter:
+        query = query.filter(AuditLog.event_type == event_filter)
+    if date_from:
+        query = query.filter(AuditLog.timestamp >= datetime.strptime(date_from, '%Y-%m-%d'))
+    if date_to:
+        query = query.filter(AuditLog.timestamp <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    event_types = db.session.query(AuditLog.event_type).distinct().order_by(AuditLog.event_type).all()
+    event_types = [e[0] for e in event_types]
+
+    return render_template("admin/reports/audit_log.html",
+                           logs=pagination.items,
+                           pagination=pagination,
+                           event_types=event_types,
+                           current_filter=event_filter,
+                           date_from=date_from,
+                           date_to=date_to)

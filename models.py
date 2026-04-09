@@ -49,6 +49,16 @@ class LoginAttempts(db.Model):
     # Status 
     status = db.Column(db.String(10), nullable=False)
 
+class AuditLog(db.Model):
+    __tablename__ = "audit_log"
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(50), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    username = db.Column(db.String(150), nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    details = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.now, index=True)
+
 
 ## DRIVER -------------
 class DriverProfile(db.Model):
