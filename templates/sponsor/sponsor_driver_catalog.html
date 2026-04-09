@@ -36,11 +36,11 @@
             <h2 style="color: #5d4037; font-weight: 700;">
                 Rewards <span style="color: #ff9800;">Catalog</span> 🛍️
             </h2>
-            <p class="text-muted">Hello, {{ profile.firstname }} | Your Balance: <span style="color: #2e7d32; font-weight: 700;">{{ points }} pts</span></p>
+            <p class="text-muted">Hello, {{ profile.driver_profile.firstname }} | Your Balance: <span style="color: #2e7d32; font-weight: 700;">{{ points }} pts</span></p>
         </div>
 
         <div class="p-4 rounded-4 mb-5" style="background-color: #fffaf0; border: 1px solid #ffe0b2;">
-            <form action="{{ url_for('driver.driver_catalog_search') }}" method="POST" class="row g-3 align-items-end">
+            <form action="{{ url_for('sponsor.sponsor_driver_catalog_search', id_driver=profile.driver_profile.user_id) }}" method="POST" class="row g-3 align-items-end">
                 <div class="col-md-5">
                     <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Search For</label>
                     <input type="text" name="user_search" class="form-control rounded-pill border-0 shadow-sm" placeholder="Artists, movies, books...">

@@ -10,6 +10,7 @@ import io
 from helpers import *
 import os
 import requests
+from sqlalchemy import func
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
@@ -529,3 +530,66 @@ def points_report():
     target_id = profile.company_id
     request = db.session.query(DriverPointsHistory).join(SponsorProfile).filter(SponsorProfile.company_id == target_id).all()
     return render_template("admin/reports/admin_points_report.html", history = request)
+
+@sponsor_bp.route("/sponsor/driver/catalog/<int:id_driver>", methods=["GET"])
+def sponsor_driver_catalog(id_driver):
+    driver = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
+    company = SponsorCompany.query.filter_by(id=driver.company_id).first()
+    priceMax = company.priceMax
+    explicit = company.explicit
+    explicitVal = "No"
+    itunes_url = "https://itunes.apple.com/search"
+    driver_points = driver.current_points
+    if explicit:
+        explicitVal = "Yes"
+
+
+    params = {
+        "term": "Michael+Jackson",
+        "media": "all",
+        "limit": 50,
+        "explicit": explicitVal
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+
+    return render_template("sponsor/sponsor_driver_catalog.html",profile=driver, items=data['results'], points = driver_points)
+
+@sponsor_bp.route("/sponsor/driver/catalog/search/<int:id_driver>", methods=["GET", "POST"])
+def sponsor_driver_catalog_search(id_driver):
+    driver = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
+    term = request.form.get("user_search")
+    term = term.replace(" ", "+")
+    mediaType = request.form.get("media_type")
+    sortType = request.form.get("sort_type")
+    driver_points = driver.current_points
+    itunes_url = "https://itunes.apple.com/search"
+
+    params = {
+        "term": term,
+        "media": mediaType,
+        "limit": 50,
+        "explicit": "No"
+    }
+
+    results = requests.get(itunes_url, params=params)
+    data = results.json()
+    items = data.get('results', [])
+
+    if sortType == "Price (Asc)":
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)))
+    elif sortType == "Price (Desc)":
+        # Sort high to low
+        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)), reverse=True)
+    elif sortType == "Best Selling":
+        sales_query = db.session.query(Order_Items.product_name,
+                                       func.sum(Order_Items.quantity).label('total_sold')).group_by(
+            Order_Items.product_name).all()
+
+        sales_map = {name: total for name, total in sales_query}
+        items = sorted(items,
+                       key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
+                       reverse=True)
+
+    return render_template("sponsor/sponsor_driver_catalog.html",profile=driver, items=items, points = driver_points)

@@ -152,6 +152,7 @@ def driver_catalog():
     priceMax = company.priceMax
     explicit = company.explicit
     explicitVal = "No"
+    driver_points = driver.current_points
     itunes_url = "https://itunes.apple.com/search"
     if explicit:
         explicitVal = "Yes"
@@ -167,10 +168,11 @@ def driver_catalog():
     results = requests.get(itunes_url, params=params)
     data = results.json()
 
-    return render_template("driver/driver_catalog.html",profile=g.profile, items=data['results'])
+    return render_template("driver/driver_catalog.html",profile=g.profile, items=data['results'], points = driver_points)
 
 @driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])
 def driver_catalog_search():
+    driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active=True).first()
     term = request.form.get("user_search")
     term = term.replace(" ", "+")
     mediaType = request.form.get("media_type")
@@ -183,7 +185,7 @@ def driver_catalog_search():
         "limit": 50,
         "explicit": "No"
     }
-
+    driver_points = driver.current_points
     results = requests.get(itunes_url, params=params)
     data = results.json()
     items = data.get('results', [])
@@ -203,7 +205,7 @@ def driver_catalog_search():
                        key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
                        reverse=True)
 
-    return render_template("driver/driver_catalog.html",profile=g.profile, items=items)
+    return render_template("driver/driver_catalog.html",profile=g.profile, items=items, points = driver_points)
 
 @driver_bp.route("/driver_order_history")
 def driver_order_history():
