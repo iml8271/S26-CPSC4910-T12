@@ -146,66 +146,42 @@ def driver_view_org_rules():
 # CATALOG ------------------------------------------------
 @driver_bp.route("/dashboard/driver_catalog", methods=["GET"])
 def driver_catalog():
-    #we can remove these after we make a catalog for sponors
-    driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active = True).first()
-    company = SponsorCompany.query.filter_by(id=driver.company_id).first()
-    priceMax = company.priceMax
-    explicit = company.explicit
-    explicitVal = "No"
-    driver_points = driver.current_points
-    itunes_url = "https://itunes.apple.com/search"
-    if explicit:
-        explicitVal = "Yes"
+    driver_link = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active=True).first()
+    catalog_entries = SponsorCatalog.query.filter_by( company_id=driver_link.company_id, is_active=True).all()
 
+    items_to_display = [entry.item_info for entry in catalog_entries]
 
-    params = {
-        "term": "Michael+Jackson",
-        "media": "all",
-        "limit": 50,
-        "explicit": explicitVal
-    }
+    return render_template("driver/driver_catalog.html", profile=current_user, points=driver_link.current_points, items=items_to_display)
 
-    results = requests.get(itunes_url, params=params)
-    data = results.json()
-
-    return render_template("driver/driver_catalog.html",profile=g.profile, items=data['results'], points = driver_points)
 
 @driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])
 def driver_catalog_search():
-    driver = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active=True).first()
-    term = request.form.get("user_search")
-    term = term.replace(" ", "+")
-    mediaType = request.form.get("media_type")
-    sortType = request.form.get("sort_type")
-    itunes_url = "https://itunes.apple.com/search"
+    sort_type = request.form.get("sort_type")
+    driver_link = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active=True).first()
+    if not driver_link:
+        return redirect(url_for('dashboard'))
 
-    params = {
-        "term": term,
-        "media": mediaType,
-        "limit": 50,
-        "explicit": "No"
-    }
-    driver_points = driver.current_points
-    results = requests.get(itunes_url, params=params)
-    data = results.json()
-    items = data.get('results', [])
+    catalog_entries = SponsorCatalog.query.filter_by(company_id=driver_link.company_id, is_active=True).all()
+    items = [entry.item_info for entry in catalog_entries]
 
-    if sortType == "Price (Asc)":
-        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)))
-    elif sortType == "Price (Desc)":
-        # Sort high to low
-        items = sorted(items, key=lambda x: x.get('trackPrice', x.get('collectionPrice', 0)), reverse=True)
-    elif sortType == "Best Selling":
-        sales_query = db.session.query(Order_Items.product_name,
-                                       func.sum(Order_Items.quantity).label('total_sold')).group_by(
-            Order_Items.product_name).all()
+    if sort_type == "Price (Asc)":
+        items.sort(key=lambda x: x.get('trackPrice') or x.get('collectionPrice') or 0)
+
+    elif sort_type == "Price (Desc)":
+        items.sort(key=lambda x: x.get('trackPrice') or x.get('collectionPrice') or 0, reverse=True)
+
+    elif sort_type == "Best Selling":
+        sales_query = db.session.query(
+            Order_Items.product_name,
+            func.sum(Order_Items.quantity).label('total_sold')
+        ).group_by(Order_Items.product_name).all()
 
         sales_map = {name: total for name, total in sales_query}
-        items = sorted(items,
-                       key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
-                       reverse=True)
-
-    return render_template("driver/driver_catalog.html",profile=g.profile, items=items, points = driver_points)
+        items.sort(
+            key=lambda x: sales_map.get(x.get('trackName') or x.get('collectionName'), 0),
+            reverse=True
+        )
+    return render_template("driver/driver_catalog.html", profile=current_user, items=items, points=driver_link.current_points)
 
 @driver_bp.route("/driver_order_history")
 def driver_order_history():

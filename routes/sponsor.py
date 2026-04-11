@@ -410,19 +410,6 @@ def driver_reject():
 
     return redirect(url_for("sponsor.pending_drivers"))
 
-# CATALOG --------------------
-@sponsor_bp.route("/search_api",methods=["GET","POST"])
-def search_api():
-    try:
-        api_url = "https://dummyjson.com/products"
-        response = requests.get(api_url)
-        if response.status_code == 200:
-            data = response.json().get("products",[])
-    except Exception as e:
-        print("Reaching API failed")
-    return render_template("sponsor/sponsor_search_api.html", items=data)
-
-
 # ORGANIZATION RULES --------------------------------------
 @sponsor_bp.route("/organization/rules", methods=["GET"])
 def view_org_rules():
@@ -531,19 +518,11 @@ def points_report():
     request = db.session.query(DriverPointsHistory).join(SponsorProfile).filter(SponsorProfile.company_id == target_id).all()
     return render_template("admin/reports/admin_points_report.html", history = request)
 
-@sponsor_bp.route("/sponsor/driver/catalog/<int:id_driver>", methods=["GET"])
-def sponsor_driver_catalog(id_driver):
-    driver = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
-    company = SponsorCompany.query.filter_by(id=driver.company_id).first()
-    priceMax = company.priceMax
-    explicit = company.explicit
+# CATALOG --------------------
+@sponsor_bp.route("/search_api",methods=["GET"])
+def search_api():
     explicitVal = "No"
     itunes_url = "https://itunes.apple.com/search"
-    driver_points = driver.current_points
-    if explicit:
-        explicitVal = "Yes"
-
-
     params = {
         "term": "Michael+Jackson",
         "media": "all",
@@ -554,16 +533,14 @@ def sponsor_driver_catalog(id_driver):
     results = requests.get(itunes_url, params=params)
     data = results.json()
 
-    return render_template("sponsor/sponsor_driver_catalog.html",profile=driver, items=data['results'], points = driver_points)
+    return render_template("sponsor/sponsor_catalog_editor.html", items=data['results'])
 
-@sponsor_bp.route("/sponsor/driver/catalog/search/<int:id_driver>", methods=["GET", "POST"])
-def sponsor_driver_catalog_search(id_driver):
-    driver = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
+@sponsor_bp.route("/search_api_specific", methods=["GET", "POST"])
+def search_api_specific():
     term = request.form.get("user_search")
     term = term.replace(" ", "+")
     mediaType = request.form.get("media_type")
     sortType = request.form.get("sort_type")
-    driver_points = driver.current_points
     itunes_url = "https://itunes.apple.com/search"
 
     params = {
@@ -592,40 +569,57 @@ def sponsor_driver_catalog_search(id_driver):
                        key=lambda x: sales_map.get(x.get('trackName', x.get('collectionName')), 0),
                        reverse=True)
 
-    return render_template("sponsor/sponsor_driver_catalog.html",profile=driver, items=items, points = driver_points)
+    return render_template("sponsor/sponsor_catalog_editor.html", items=items)
 
 
-@sponsor_bp.route('/place_order/<int:id_driver>', methods=['POST'])
-def place_order(id_driver):
+@sponsor_bp.route('/add-to-catalog', methods=['POST'])
+def add_to_catalog():
+    profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
+    org_id = profile.company_id
     data = request.get_json()
-    driver_link = DriverCompanyLink.query.filter_by(
-        driver_id=id_driver,
-        is_active=True
-    ).first()
-    if driver_link.current_points < data['total_points']:
-        return jsonify({"status": "error", "message": "Insufficient points balance."})
+    items = data.get('items', [])
 
-    new_order = Order(
-        user_id=id_driver,
-        org_id=driver_link.company_id,
-        dollar_price=data['total_dollars'],
-        point_price=data['total_points'],
-        date=datetime.now()
-    )
-    db.session.add(new_order)
-    db.session.flush()
+    if not items:
+        return jsonify({"message": "No items provided"}), 400
 
-    for item in data['items']:
-        new_item = Order_Items(
-            order_id=new_order.order_id,
-            product_name=item['name'],
-            quantity=item['qty'],
-            unit_price_dollars=item['price_usd'],
-            unit_price_points=item['price_pts']
-        )
-        db.session.add(new_item)
+    try:
+        for item in items:
+            unique_id = item.get('trackId') or item.get('collectionId')
 
-    driver_link.current_points -= data['total_points']
+            existing_entry = SponsorCatalog.query.filter(
+                SponsorCatalog.company_id == org_id,
+                (SponsorCatalog.item_info['trackId'].as_string() == unique_id) |
+                (SponsorCatalog.item_info['collectionId'].as_string() == unique_id)
+            ).first()
 
-    db.session.commit()
-    return jsonify({"status": "success", "order_id": new_order.order_id})
+            if existing_entry:
+                if not existing_entry.is_active:
+                    existing_entry.is_active = True
+                continue
+
+
+            new_catalog_item = SponsorCatalog(
+                company_id=org_id,
+                item_info=item,
+                is_active=True
+            )
+            db.session.add(new_catalog_item)
+
+        db.session.commit()
+        return jsonify({"message": f"Successfully updated catalog with {len(items)} items."}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error adding to catalog: {str(e)}")
+        return jsonify({"message": "Internal server error occurred."}), 500
+
+@sponsor_bp.route('/current_catalog', methods=['GET'])
+def current_catalog():
+    items = SponsorCatalog.query.filter_by(is_active=True, company_id = current_user.sponsor_profile.company_id).all()
+
+    return render_template("sponsor/sponsor_catalog.html", items=items)
+
+@sponsor_bp.route('/remove_from_catalog', methods=['GET', 'POST'])
+def remove_from_catalog():
+
+    redirect(url_for('current_catalog'))

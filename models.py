@@ -223,14 +223,12 @@ class SponsorCatalog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey('sponsor_companies.id'), nullable=False)
     
-    # Store the unique ID from the API
-    api_item_id = db.Column(db.String(100), nullable=False)
-    
-    item_name = db.Column(db.String(255), nullable=False)
-    item_image_url = db.Column(db.String(500))
-    
     # Relationship to the company
     company = db.relationship('SponsorCompany', backref=db.backref('catalog_items', cascade="all, delete-orphan"))
+
+    #item info
+    item_info = db.Column(db.JSON)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
 
 
 ## SUPPORT -----

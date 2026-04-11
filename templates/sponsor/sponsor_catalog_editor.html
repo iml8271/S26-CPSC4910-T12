@@ -1,74 +1,230 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Catalog Editor</title>
+<title>Rewards Catalog</title>
+<style>
+    .action-card { transition: all 0.2s ease; cursor: pointer; }
+    .action-card:hover {
+        background-color: #fff !important;
+        border-color: #ff9800 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .catalog-card {
+        transition: transform 0.2s;
+        border: 2px solid #ffe0b2 !important;
+    }
+    .catalog-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        border-color: #ff9800 !important;
+    }
+    .cart-sticky {
+        position: sticky;
+        top: 20px;
+        border: 2px dashed #ffe0b2;
+        background-color: #fffaf0;
+    }
+</style>
+
 {% endblock %}
 
 {% block body %}
-<div class="center-body-div">
-<h1>Logged in as Sponsor {{ firstname }}!</h1>
+<div class="container py-5">
+    <div class="card pt-4 px-5 pb-5 shadow-lg rounded-4 border-0" style="max-width: 1100px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
 
-<br>
+        <div class="text-center mb-4">
+            <h2 style="color: #5d4037; font-weight: 700;">
+                Rewards Catalog <span style="color: #ff9800;">Editor</span> 🛍️
+            </h2>
+            <a href="{{ url_for('sponsor.current_catalog') }}" class="btn btn-outline-brown rounded-pill fw-bold">View Current Catalog</a>
+        </div>
+        <div class="p-4 rounded-4 mb-5" style="background-color: #fffaf0; border: 1px solid #ffe0b2;">
+            <form action="{{ url_for('sponsor.search_api_specific') }}" method="POST" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Search For Items to Add</label>
+                    <input type="text" name="user_search" class="form-control rounded-pill border-0 shadow-sm" placeholder="Artists, movies, books...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Media Type</label>
+                    <select name="media_type" class="form-select rounded-pill border-0 shadow-sm">
+                        <option value="music">Music</option>
+                        <option value="movie">Movies</option>
+                        <option value="podcast">Podcasts</option>
+                        <option value="audiobook">Audiobooks</option>
+                        <option value="all">Everything</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Sort</label>
+                    <select name="sort_type" class="form-select rounded-pill border-0 shadow-sm">
+                        <option value="Best Selling">Best Selling</option>
+                        <option value="Price (Desc)">Price (Desc)</option>
+                        <option value="Price (Asc)">Price (Asc)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn w-100 rounded-pill fw-bold" style="background-color: #ff9800; color: white;">Find</button>
+                </div>
+            </form>
+        </div>
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-  {% for message in messages %}
-    <p><strong>{{ message }}</strong></p>
-  {% endfor %}
-{% endif %}
-{% endwith %}
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    {% for item in items %}
+                    <div class="col-sm-6">
+                        <div class="catalog-card p-3 rounded-4 shadow-sm bg-white h-100 d-flex flex-column">
+                            <img src="{{ item.artworkUrl100 }}" class="rounded-3 mb-3 w-100" style="aspect-ratio: 1/1; object-fit: cover;">
 
+                            <h6 class="mb-1 text-truncate" style="color: #5d4037; font-weight: 700;">{{ item.trackName or item.collectionName }}</h6>
+                            <p class="text-muted small mb-3">{{ item.primaryGenreName }}</p>
 
-<h2>Min and Max Point Range</h2>
-<form method="POST" action="{{ url_for('sponsor.sponsor_catalog_set_price_range') }}">
-  <label>Minimum Point: <input type="number" name="min_price" value="{{ min_price or 0 }}" min="0"></label>
-  <label>Maximum Points (pts): <input type="number" name="max_price" value="{{ max_price or 10000 }}" min="0"></label>
-  <button type="submit">Set Range</button>
-</form>
+                            {% set price = item.trackPrice or item.collectionPrice or 0 %}
+                            {% set point_price = (price * 10) | int %}
 
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span style="color: #2e7d32; font-weight: 800; font-size: 1.1rem;">{{price}} <small style="font-size: 0.7rem;">USD</small></span>
+                                <span style="color: #2e7d32; font-weight: 800; font-size: 1.1rem;">{{point_price}} <small style="font-size: 0.7rem;">pts</small></span>
+                                <div class="btn-group">
+                                    <button onclick="addToCart('{{ item | tojson | urlencode }}')" class="btn btn-sm btn-outline-warning rounded-start-pill">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
+            <div class="col-lg-4">
+                <div class="cart-sticky p-4 rounded-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0" style="color: #5d4037; font-weight: 700; text-transform: uppercase;">Items to Add to Catalog</h6>
+                            <span class="badge rounded-pill bg-warning text-white" id="cart-count">0</span>
+                    </div>
 
+                    <ul id="cart-items" class="list-unstyled small mb-4" style="max-height: 300px; overflow-y: auto;">
+                        <li class="text-muted fst-italic text-center py-3">No items selected...</li>
+                    </ul>
 
-<h2>Add New Item</h2>
-<form method="POST" action="{{ url_for('sponsor.sponsor_catalog_add') }}">
-  <input type="text" name="name" placeholder="Item Name" required>
-  <input type="text" name="description" placeholder="Description">
-  <input type="number" name="price" placeholder="Point Cost" min="0" required>
-  <button type="submit">Add Item</button>
-</form>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+                        <h4 class="mb-0" style="color: #2e7d32; font-weight: 800;">
+                        <span id="cart-total">0</span> <small style="font-size: 0.8rem;">pts</small>
+                        </h4>
+                </div>
 
+            <button onclick="checkoutCart()" id="checkout-btn" class="btn btn-warning w-100 rounded-pill mb-2 fw-bold" disabled>
+                    Add to Organization Catalog
+            </button>
+        <button onclick="clearCart()" class="btn btn-link btn-sm w-100 text-decoration-none text-muted">Clear Selection</button>
+    </div>
+            </div>
+        </div>
 
-<h2>Current Catalog</h2>
-<table border="1">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Description</th>
-      <th>Price (pts)</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in items %}
-    <tr>
-      <form method="POST" action="{{ url_for('sponsor.sponsor_catalog_edit', item_index=loop.index0) }}">
-        <td><input type="text" name="name" value="{{ item.name }}"></td>
-        <td><input type="text" name="description" value="{{ item.description or '' }}"></td>
-        <td><input type="number" name="price" value="{{ item.price }}" min="0"></td>
-        <td>
-          <button type="submit">Save</button>
-          <button type="submit" form="delete-{{ loop.index0 }}">Delete</button>
-        </td>
-      </form>
-    </tr>
-    <form id="delete-{{ loop.index0 }}" method="POST" action="{{ url_for('sponsor.sponsor_catalog_delete', item_index=loop.index0) }}" onsubmit="return confirm('Delete this item?')"></form>
-    {% endfor %}
-  </tbody>
-</table>
-
-{% if not items %}
-  <p>No items in the catalog yet.</p>
-{% endif %}
-
+         <div class="text-center mt-5">
+            <a href="{{ url_for('dashboard') }}" class="text-muted small text-decoration-none">← Back to Dashboard</a>
+        </div>
+    </div>
 </div>
+
+<script type="text/javascript">
+  let cart = [];
+
+  // Use the item data passed from the loop
+  function addToCart(itemDataEncoded) {
+    const item = JSON.parse(decodeURIComponent(itemDataEncoded));
+    const itemId = item.trackId || item.collectionId;
+
+    // Check if already in the current "staging" cart
+    const exists = cart.find(i => (i.trackId || i.collectionId) === itemId);
+
+    if (!exists) {
+        cart.push(item);
+        initCart();
+    } else {
+        alert("This item is already in your selection list.");
+    }
+  }
+
+  function initCart() {
+    const list = document.getElementById('cart-items');
+    const totalEl = document.getElementById('cart-total');
+    const countEl = document.getElementById('cart-count');
+    const checkoutBtn = document.getElementById('checkout-btn');
+
+    list.innerHTML = '';
+    let totalPoints = 0;
+
+    if (cart.length === 0) {
+        list.innerHTML = '<li class="text-muted fst-italic text-center py-3">No items selected...</li>';
+        checkoutBtn.disabled = true;
+    } else {
+        checkoutBtn.disabled = false;
+        cart.forEach((item, index) => {
+            const price = item.trackPrice || item.collectionPrice || 0;
+            const pointPrice = Math.floor(price * 10);
+            totalPoints += pointPrice;
+
+            const li = document.createElement('li');
+            li.className = "d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-light";
+            li.innerHTML = `
+                <div class="text-truncate me-2" style="max-width: 150px;">
+                    <strong class="d-block text-truncate">${item.trackName || item.collectionName}</strong>
+                    <span class="text-muted" style="font-size: 0.75rem;">${pointPrice} pts</span>
+                </div>
+                <button onclick="removeFromCart(${index})" class="btn btn-sm text-danger p-0 border-0">
+                    <i class="bi bi-x-circle-fill"></i> Remove
+                </button>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    totalEl.textContent = totalPoints;
+    countEl.textContent = cart.length;
+  }
+
+  function removeFromCart(index) {
+    cart.splice(index, 1);
+    initCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    initCart();
+  }
+
+  async function checkoutCart() {
+    if (cart.length === 0) return;
+
+    // Show loading state
+    const btn = document.getElementById('checkout-btn');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+
+    try {
+        const response = await fetch("{{ url_for('sponsor.add_to_catalog') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: cart })
+        });
+
+        if (response.ok) {
+            alert("Items successfully added to your catalog!");
+            clearCart();
+        } else {
+            const err = await response.json();
+            alert("Error: " + (err.message || "Failed to save items."));
+        }
+    } catch (error) {
+        console.error("Checkout failed:", error);
+        alert("Server error. Please check your connection.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+  }
+</script>
+
 {% endblock %}
+

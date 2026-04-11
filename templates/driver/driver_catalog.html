@@ -41,20 +41,6 @@
 
         <div class="p-4 rounded-4 mb-5" style="background-color: #fffaf0; border: 1px solid #ffe0b2;">
             <form action="{{ url_for('driver.driver_catalog_search') }}" method="POST" class="row g-3 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Search For</label>
-                    <input type="text" name="user_search" class="form-control rounded-pill border-0 shadow-sm" placeholder="Artists, movies, books...">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Media Type</label>
-                    <select name="media_type" class="form-select rounded-pill border-0 shadow-sm">
-                        <option value="music">Music</option>
-                        <option value="movie">Movies</option>
-                        <option value="podcast">Podcasts</option>
-                        <option value="audiobook">Audiobooks</option>
-                        <option value="all">Everything</option>
-                    </select>
-                </div>
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-uppercase" style="color: #5d4037;">Sort</label>
                     <select name="sort_type" class="form-select rounded-pill border-0 shadow-sm">
