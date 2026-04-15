@@ -16,10 +16,12 @@ from routes_invoice import invoice_bp
 import os
 
 
+
+
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "giggle-gang"
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pointfleetdb.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://team12:Team12Password@cpsc4910-s26.cobd8enwsupz.us-east-1.rds.amazonaws.com:3306/Team12_DB'
 app.config["SECRET_KEY"] = "giggle-gang"
 
 #Bind db
@@ -248,4 +250,4 @@ def view_company_profile(company_id):
     return render_template("company/company_viewcard.html", company=company)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)

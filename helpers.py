@@ -209,7 +209,7 @@ def driver_create_bulk(email,firstname,lastname,company_id,points,points_reason)
 
 
 
-'''
+
 def driver_create(
     email: str,
     firstname: str,
@@ -468,7 +468,7 @@ def driver_a_update_address(
     except Exception as e:
         db.session.rollback()
         raise RuntimeError(f"Failed to update driver address: {str(e)}")
-'''
+
 def driver_accept_application(
     driver_profile: DriverProfile,
     company_id: int,
