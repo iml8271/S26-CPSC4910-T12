@@ -623,3 +623,79 @@ def current_catalog():
 def remove_from_catalog():
 
     redirect(url_for('current_catalog'))
+
+@sponsor_bp.route('/sponsor_driver_cat/<int:id_driver>', methods=['GET'])
+def sponsor_driver_catalog(id_driver):
+    driver_link = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
+    catalog_entries = SponsorCatalog.query.filter_by(company_id=driver_link.company_id, is_active=True).all()
+
+    items_to_display = [entry.item_info for entry in catalog_entries]
+
+    return render_template("sponsor/sponsor_driver_catalog.html", profile=driver_link, points=driver_link.current_points,
+                           items=items_to_display)
+
+
+@sponsor_bp.route('/sponsor_driver_cat/sort/<int:id_driver>', methods=['GET', 'POST'])
+def sponsor_driver_catalog_sort(id_driver):
+    sort_type = request.form.get("sort_type")
+    driver_link = DriverCompanyLink.query.filter_by(driver_id=id_driver, is_active=True).first()
+    if not driver_link:
+        return redirect(url_for('dashboard'))
+
+    catalog_entries = SponsorCatalog.query.filter_by(company_id=driver_link.company_id, is_active=True).all()
+    items = [entry.item_info for entry in catalog_entries]
+
+    if sort_type == "Price (Asc)":
+        items.sort(key=lambda x: x.get('trackPrice') or x.get('collectionPrice') or 0)
+
+    elif sort_type == "Price (Desc)":
+        items.sort(key=lambda x: x.get('trackPrice') or x.get('collectionPrice') or 0, reverse=True)
+
+    elif sort_type == "Best Selling":
+        sales_query = db.session.query(
+            Order_Items.product_name,
+            func.sum(Order_Items.quantity).label('total_sold')
+        ).group_by(Order_Items.product_name).all()
+
+        sales_map = {name: total for name, total in sales_query}
+        items.sort(
+            key=lambda x: sales_map.get(x.get('trackName') or x.get('collectionName'), 0),
+            reverse=True
+        )
+    return render_template("sponsor/sponsor_driver_catalog.html", profile=driver_link, items=items,
+                           points=driver_link.current_points)
+
+@sponsor_bp.route('/place_order/<int:id_driver>', methods=['POST'])
+def place_order(id_driver):
+    data = request.get_json()
+    driver_link = DriverCompanyLink.query.filter_by(
+        driver_id=id_driver,
+        is_active=True
+    ).first()
+    if driver_link.current_points < data['total_points']:
+        return jsonify({"status": "error", "message": "Insufficient points balance."})
+
+    new_order = Order(
+        user_id=id_driver,
+        org_id=driver_link.company_id,
+        dollar_price=data['total_dollars'],
+        point_price=data['total_points'],
+        date=datetime.now()
+    )
+    db.session.add(new_order)
+    db.session.flush()
+
+    for item in data['items']:
+        new_item = Order_Items(
+            order_id=new_order.order_id,
+            product_name=item['name'],
+            quantity=item['qty'],
+            unit_price_dollars=item['price_usd'],
+            unit_price_points=item['price_pts']
+        )
+        db.session.add(new_item)
+
+    driver_link.current_points -= data['total_points']
+
+    db.session.commit()
+    return jsonify({"status": "success", "order_id": new_order.order_id})

@@ -34,7 +34,9 @@
                         data-drivername="{{ driver.driver_profile.firstname }} {{ driver.driver_profile.lastname }}">
                         Adjust Points
                     </button>
+                    <button type="button" class="btn btn-custom rounded-pill flex-grow-1" onclick="location.href='{{ url_for('sponsor.sponsor_driver_catalog', id_driver=driver.driver_profile.user_id) }}'">Place an Order on Their Behalf</button>
                     <button class="btn btn-outline-danger rounded-pill">Delete</button>
+
 
                 </div>
             </div>
