@@ -157,7 +157,7 @@ def ext_driver_auto_link(driver_id,company_id,points=0,points_reason="Auto-Accep
         raise RuntimeError(f"Failed to create link: {str(e)}") from e
 
 # Creates core user, driver profile, and application
-def driver_create_signup(email,firstname,lastname,username,password,streetname,city,zipcode,company_id):
+def driver_create_signup(email,firstname,lastname,username,password,streetname,city,zipcode,company_ids):
     try:
         # Create profile
         # Check Email uniqueness : email is unique identifier
@@ -172,7 +172,11 @@ def driver_create_signup(email,firstname,lastname,username,password,streetname,c
         # Add address
         driver_update_address(driver_id=driver_user.id,streetname=streetname,city=city,zipcode=zipcode)
         # Create application
-        driver_create_application(driver_id=driver_user.id,company_id=company_id)
+        if not isinstance(company_ids, list):
+            company_ids = [company_ids] # Safety check: wrap in list if only one ID sent
+
+        for c_id in company_ids:
+            driver_create_application(driver_id=driver_user.id, company_id=c_id)
         db.session.commit()
         return driver_user
     except Exception as e:

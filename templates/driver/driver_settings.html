@@ -1,17 +1,29 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Sponsor-Driver</title>
+<title>Sponsor-Driver Settings</title>
+<style>
+    /* Custom Toggle Switch Styling */
+    .form-check-input:checked {
+        background-color: #ff9800;
+        border-color: #ff9800;
+    }
+    .text-muted-accessible {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
 <div class="container py-5">
     <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
         
-        <h2 class="mb-4" style="color: #ff9800; font-weight: 700;">Settings - Driver ⚙️</h2>
+        <h1 class="h2 mb-4" style="color: #ff9800; font-weight: 700;">Settings - Driver ⚙️</h1>
         
-        <form id="driver-settings-address" method="POST" action="{{ url_for('driver.driver_settings') }}">
-            <h5 class="mb-3" style="color: #795548; font-weight: 600;">📍 Personal Info & Address</h5>
+        <form id="driver-settings-form" method="POST" action="{{ url_for('driver.driver_settings') }}">
+            
+            <h2 class="h5 mb-3" style="color: #795548; font-weight: 600;">📍 Personal Info & Address</h2>
             
             <div class="mb-3">
                 <label for="streetname" class="form-label" style="color: #5d4037; font-weight: 600;">Street Address</label>
@@ -32,8 +44,32 @@
                 </div>
             </div>
 
+            <hr class="my-4">
+
+            <h2 class="h5 mb-3" style="color: #795548; font-weight: 600;">🔔 Email Notification Preferences</h2>
+            
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="alert_drop" checked disabled aria-describedby="drop-desc">
+                <label class="form-check-label fw-bold" for="alert_drop" style="color: #5d4037;">Sponsorship Updates</label>
+                <div id="drop-desc" class="text-muted-accessible">Receive alerts if dropped by a sponsor. <span class="badge bg-light text-dark border">Required</span></div>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="alert_points" id="alert_points" 
+                       {% if driver.alerts.points_alerts %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="alert_points" style="color: #5d4037;">Point Adjustments</label>
+                <div class="text-muted-accessible">Receive alerts when points are added or removed.</div>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" name="alert_orders" id="alert_orders" 
+                       {% if driver.alerts.order_alerts %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="alert_orders" style="color: #5d4037;">Order Summaries</label>
+                <div class="text-muted-accessible">Receive a summary alert when a new order is placed.</div>
+            </div>
+
             <div class="mt-4 d-grid">
-                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Update Profile</button>
+                <button type="submit" class="btn btn-warning btn-lg rounded-pill text-white fw-bold shadow-sm">Update Settings</button>
             </div>
         </form>
     </div>

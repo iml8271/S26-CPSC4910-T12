@@ -39,33 +39,44 @@ def restrict_to_driver():
 @driver_bp.route("/settings", methods=["GET","POST"])
 def driver_settings():
     driver = g.profile
-    if request.method=="POST":
-        #Address Checker
-        streetname = request.form.get("streetname")
-        city = request.form.get("city")
-        zipcode = request.form.get("zipcode")
-        #tba
+    try: 
+        # 1. Ensure preferences object exists (One-to-One relationship)
+        if driver.alerts is None:
+            driver.alerts = DriverAlerts(driver_id=driver.user_id)
+            db.session.add(driver.alerts)
+            db.session.commit()
+            # Refresh driver object to link preference
+            db.session.refresh(driver)
 
-        if not streetname or not city or not zipcode:
-            flash("All address fields are required.")
-            return redirect(url_for("driver_settings"))
-        
-        if (driver.streetname == streetname and
-            driver.city == city and
-            driver.zipcode == zipcode):
-            
-            flash("No changes detected.")
+        if request.method == "POST":
+            # Address Logic
+            streetname = request.form.get("streetname")
+            city = request.form.get("city")
+            zipcode = request.form.get("zipcode")
+
+            if not streetname or not city or not zipcode:
+                flash("All address fields are required.", "warning")
+                return redirect(url_for("driver.driver_settings"))
+
+            # Notification Toggles
+            # Logic: If it exists in form, it's True (checked). If not, it's False (unchecked).
+            driver.alerts.points_alerts = True if request.form.get("alert_points") else False
+            driver.alerts.order_alerts = True if request.form.get("alert_orders") else False
+
+            # Update address
+            driver.streetname = streetname
+            driver.city = city
+            driver.zipcode = zipcode
+
+            db.session.commit()
+            flash("Settings updated successfully!", "success")
             return redirect(url_for("driver.driver_settings"))
 
-        # Only update changed fields
-        driver.streetname = streetname
-        driver.city = city
-        driver.zipcode = zipcode
-
-        db.session.commit()
-        flash("Address updated successfully.")
-        return redirect(url_for("driver.driver_settings"), driver=driver,username=current_user.username)
-    return render_template("driver/driver_settings.html", driver=driver,username=current_user.username)
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating settings: {e}")
+        flash("An error occurred while saving.", "danger")
+    return render_template("driver/driver_settings.html", driver=driver, username=current_user.username)
 
 
 @driver_bp.route("/driver_faq")

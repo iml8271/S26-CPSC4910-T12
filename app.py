@@ -21,7 +21,8 @@ import os
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "giggle-gang"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://team12:Team12Password@cpsc4910-s26.cobd8enwsupz.us-east-1.rds.amazonaws.com:3306/Team12_DB'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://team12:Team12Password@cpsc4910-s26.cobd8enwsupz.us-east-1.rds.amazonaws.com:3306/Team12_DB'
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pointfleetdb.db"
 app.config["SECRET_KEY"] = "giggle-gang"
 
 #Bind db
@@ -127,43 +128,51 @@ def dashboard():
 # DEBUG TASKS --------------------
 @app.route("/debug")
 def debugmenu():
-    return render_template("debugmenu.html")
+    if app.debug :
+        return render_template("debugmenu.html")
+    return redirect(url_for("homepage"))
 
 @app.route("/debug/login-driver")
 def debug_driver_login():
-    debug_user = Users.query.filter_by(role="driver").first()
-    
-    if debug_user:
-        login_user(debug_user)
-        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
-        return redirect(url_for("dashboard"))
-    
-    flash("No driver found in database to log in!", "danger")
-    return redirect(url_for('debugmenu'))
+    if app.debug:
+        debug_user = Users.query.filter_by(role="driver").first()
+        
+        if debug_user:
+            login_user(debug_user)
+            flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+            return redirect(url_for("dashboard"))
+        
+        flash("No driver found in database to log in!", "danger")
+        return redirect(url_for('debugmenu'))
+    return redirect(url_for("homepage"))
 
 @app.route("/debug/login-sponsor")
 def debug_sponsor_login():
-    debug_user = Users.query.filter_by(role="sponsor").first()
-    
-    if debug_user:
-        login_user(debug_user)
-        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
-        return redirect(url_for("dashboard"))
-    
-    flash("No driver found in database to log in!", "danger")
-    return redirect(url_for('debugmenu'))
+    if app.debug:
+        debug_user = Users.query.filter_by(role="sponsor").first()
+        
+        if debug_user:
+            login_user(debug_user)
+            flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+            return redirect(url_for("dashboard"))
+        
+        flash("No driver found in database to log in!", "danger")
+        return redirect(url_for('debugmenu'))
+    return redirect(url_for("homepage"))
 
 @app.route("/debug/login-admin")
 def debug_admin_login():
-    debug_user = Users.query.filter_by(role="admin").first()
-    
-    if debug_user:
-        login_user(debug_user)
-        flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
-        return redirect(url_for("dashboard"))
-    
-    flash("No driver found in database to log in!", "danger")
-    return redirect(url_for('debugmenu'))
+    if app.debug:
+        debug_user = Users.query.filter_by(role="admin").first()
+        
+        if debug_user:
+            login_user(debug_user)
+            flash(f"Debug Mode: Logged in as {debug_user.username}", "info")
+            return redirect(url_for("dashboard"))
+        
+        flash("No driver found in database to log in!", "danger")
+        return redirect(url_for('debugmenu'))
+    return redirect(url_for("homepage"))
 
 
 # Roles
@@ -181,25 +190,6 @@ def role_required(*roles):
     return wrapper
 
 
-'''
-@app.route("/admin/dashboard")
-@role_required("admin")
-def view_admin_dashboard():
-    return render_template("admin/admin_dashboard.html", username=current_user.username)
-
-@app.route("/sponsor/dashboard")
-@role_required("sponsor")
-def view_sponsor_dashboard():
-    sponsor_profile = SponsorProfile.query.filter_by(user_id=current_user.id).first()
-    return render_template("sponsor/sponsor_dashboard.html", username=current_user.username,firstname=sponsor_profile.firstname)
-
-@app.route("/driver/dashboard")
-@role_required("driver")
-def view_driver_dashboard():
-    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
-    points = profile.points if profile else 0
-    return render_template("driver/driver_dashboard.html", username=current_user.username,points=points,profile=profile)
-'''
 
 @app.route("/driver_profile")
 @login_required
@@ -221,25 +211,6 @@ def update_email():
 
     return redirect(url_for("dashboard", message="Email updated successfully!"))
 
-@app.route("/add-shipping-info", methods=["POST"])
-@login_required
-def add_shipping_info():
-    first_name = request.form.get("first_name")
-    last_name = request.form.get("last_name")
-    house_num = request.form.get("house_num")
-    street_name = request.form.get("street_name")
-    city_name = request.form.get("city_name")
-    state = request.form.get("state")
-    zip_code = request.form.get("zip_code")
-    country = request.form.get("country")
-    nickname = request.form.get("nickname")
-    email = current_user.email
-
-    new_address = Address(fname = first_name, lname = last_name, house_no = house_num, street = street_name,
-                          city = city_name, state = state, zipcode = zip_code, country = country, nickname = nickname,
-                          email = email)
-    db.session.add(new_address)
-
 
 @app.route("/company/view/<int:company_id>")
 @login_required
@@ -250,4 +221,4 @@ def view_company_profile(company_id):
     return render_template("company/company_viewcard.html", company=company)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000,debug=True)

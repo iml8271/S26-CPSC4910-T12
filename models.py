@@ -83,6 +83,9 @@ class DriverProfile(db.Model):
     # Sponsor Relationships
     company_links = db.relationship("DriverCompanyLink"
                                   ,back_populates="driver_profile")
+    
+    #Alerts
+    alerts = db.relationship("DriverAlerts",back_populates="driver",cascade="all,delete-orphan",uselist=False)
 
 class Driver_Org_RelationShip(db.Model):
     __tablename__ = "driver_Org_RelationShip"
@@ -169,6 +172,29 @@ def update_link_points(mapper, connection, target):
         .where(link_table.c.id == target.link_id)
         .values(current_points=link_table.c.current_points + target.points_change)
     )
+
+class DriverAlerts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver_profile.user_id'), unique=True)
+    
+    # Settings
+    points_alerts = db.Column(db.Boolean, default=True)
+    order_alerts = db.Column(db.Boolean, default=True)
+
+    # Use back_populates instead of backref
+    driver = db.relationship('DriverProfile', back_populates="alerts")
+
+    @event.listens_for(DriverProfile, 'after_insert')
+    def create_driver_alerts(mapper, connection, target):
+        alerts_table = DriverAlerts.__table__
+        connection.execute(
+            alerts_table.insert().values(
+                driver_id=target.user_id,
+                points_alerts=True,
+                order_alerts=True
+            )
+        )
+
 
 ## SPONSOR -----
 class SponsorProfile(db.Model):
@@ -351,3 +377,14 @@ class OrderHistory(db.Model):
     item_id = db.Column(db.Integer, db.ForeignKey('sponsor_catalog.id'), nullable=False)
     purchase_point_price = db.Column(db.Integer, nullable=False)
     purchase_dollar_price= db.Column(db.DECIMAL(10, 2), nullable=False)
+
+class OrderStatus(db.Model):
+    __tablename__ = "order_status"
+    id = db.Column(db.Integer, primary_key=True)
+    link_id =  db.Column(db.Integer, db.ForeignKey('driver_company_link.id'), nullable=False)
+    link = db.relationship("DriverCompanyLink")
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
+
+    status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived","canceled"
+    
+    update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)

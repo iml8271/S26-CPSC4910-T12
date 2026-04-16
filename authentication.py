@@ -24,12 +24,6 @@ def handle_login():
             login_user(user)
             log_audit_event("login_success", user_id=user.id, username=user.username)
             return redirect(url_for("dashboard"))
-            """dashboards = {
-                "admin": "view_admin_dashboard",
-                "sponsor": "view_sponsor_dashboard",
-                "driver": "view_driver_dashboard"
-            }
-            return redirect(url_for(dashboards.get(user.role, "view_driver_dashboard")))"""
         else:
             log_audit_event("login_failed", username=username, details="Invalid credentials")
             return render_template("auth/login.html", error="Invalid username or password")
@@ -87,6 +81,7 @@ def handle_driver_signup():
     if request.method == "POST":
         username = request.form.get("username").strip()
         password = request.form.get("password").strip()
+        reenter_password = request.form.get("reenter-password").strip()
         email = request.form.get("email").strip()
 
         #First Name Checker
@@ -110,13 +105,14 @@ def handle_driver_signup():
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
-        if not password:
-            return render_template("auth/signup.html", error="Password required")
+        if (not password) or (not reenter_password):
+            return render_template("auth/forgotpassword.html", error="Password required")
+        
+        if password != reenter_password:
+            return render_template("auth/forgotpassword.html", error="Passwords do not match")
 
         if not get_password_strength(password):
-            return render_template("auth/signup.html", error="Password does not meet minimums")
-        
-        #hashed_password = generate_password_hash(password,method="pbkdf2:sha256")
+            return render_template("auth/forgotpassword.html", error="Password does not meet minimums")
         
         #Email Checker
         #tba
@@ -124,21 +120,15 @@ def handle_driver_signup():
             return render_template("driver/driver_signup.html", error="Email already registered")
 
         #Sponsor Link
-        company_id = request.form.get("company_id")
-        if not company_id:
+        company_ids = request.form.getlist('company_ids')
+        if not company_ids:
             return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
-
-        company_id = int(company_id)
-
-        if not company_id:
-            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
-
 
         try:
             new_driver = driver_create_signup(email=email,firstname=firstname,
                                  lastname=lastname,username=username,
                                  password=password,streetname=streetname,
-                                 city=city,zipcode=zipcode,company_id=company_id)
+                                 city=city,zipcode=zipcode,company_ids=company_ids)
             login_user(new_driver,remember=True)
             log_audit_event("account_created", user_id=new_driver.id, username=new_driver.username,
                             details="Driver self-signup")
