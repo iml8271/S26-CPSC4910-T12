@@ -231,8 +231,9 @@ def handle_sponsor_signup():
 @auth_bp.route("/forgot_password", methods=["GET","POST"])
 def handle_forgot_password():
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
+        reenter_password = request.form.get("reenter-password").strip()
 
         user = Users.query.filter_by(username=username).first()
         if not user:
@@ -241,8 +242,11 @@ def handle_forgot_password():
         # Checks if password meets minimum requirements:
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
-        if not password:
+        if (not password) or (not reenter_password):
             return render_template("auht/forgotpassword.html", error="Password required")
+        
+        if password != reenter_password:
+            return render_template("auht/forgotpassword.html", error="Passwords do not match")
 
         if not get_password_strength(password):
             return render_template("auht/forgotpassword.html", error="Password does not meet minimums")

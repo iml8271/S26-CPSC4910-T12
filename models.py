@@ -339,3 +339,15 @@ class Order_Items(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=1)
     unit_price_dollars = db.Column(db.DECIMAL(10, 2), nullable=False)
     unit_price_points = db.Column(db.Integer, nullable=False)
+
+class OrderHistory(db.Model):
+    __tablename__ = "order_history"
+    id = db.Column(db.Integer, primary_key=True)
+    link_id =  db.Column(db.Integer, db.ForeignKey('driver_company_link.id'), nullable=False)
+    link = db.relationship("DriverCompanyLink")
+
+    date = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    item_id = db.Column(db.Integer, db.ForeignKey('sponsor_catalog.id'), nullable=False)
+    purchase_point_price = db.Column(db.Integer, nullable=False)
+    purchase_dollar_price= db.Column(db.DECIMAL(10, 2), nullable=False)

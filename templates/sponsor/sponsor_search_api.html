@@ -2,15 +2,23 @@
 
 {% block head %}
 <title>Browse Products</title>
+<style>
+    .product-img-modal {
+        width: 100%;
+        max-height: 250px;
+        object-fit: contain;
+        background: #f8f9fa;
+        border-radius: 15px;
+    }
+</style>
 {% endblock %}
-
 
 {% block body %}
 <div class="container py-5">
     <div class="card p-4 shadow-sm rounded-4 border-0 mb-4" style="border-top: 5px solid #ff9800;">
         <h3 class="fw-bold" style="color: #5d4037;">Find Products 🔍</h3>
         <form action="{{ url_for('sponsor.search_api') }}" method="GET" class="d-flex gap-2">
-            <input type="text" name="q" class="form-control rounded-pill" placeholder="Search (e.g. Phone, Dog Food...)" value="{{ request.args.get('q', '') }}">
+            <input type="text" name="q" class="form-control rounded-pill" placeholder="Search..." value="{{ request.args.get('q', '') }}">
             <button type="submit" class="btn btn-warning rounded-pill text-white px-4 fw-bold">Search</button>
         </form>
     </div>
@@ -21,17 +29,146 @@
             <div class="card h-100 rounded-4 border-0 shadow-sm p-3" style="background: #fffaf0;">
                 <img src="{{ item.thumbnail }}" class="rounded-3 mb-2 w-100" style="aspect-ratio: 1/1; object-fit: cover;">
                 <h6 class="text-truncate fw-bold mb-1">{{ item.title }}</h6>
-                <p class="small text-success fw-bold mb-2">${{ item.price }}</p>
+                <p class="small text-primary fw-bold mb-2">{{ (item.price * pc) | round | int }} Points</p>
+                <p class="text-muted" style="font-size: 0.7rem;">(Base Price: ${{ item.price }})</p>
                 
-                <form action="" method="POST">
-                    <input type="hidden" name="api_id" value="{{ item.id }}">
-                    <input type="hidden" name="title" value="{{ item.title }}">
-                    <input type="hidden" name="thumbnail" value="{{ item.thumbnail }}">
-                    <button type="submit" class="btn btn-sm btn-success w-100 rounded-pill fw-bold">Add to Catalog</button>
-                </form>
+                <button type="button" 
+                        class="btn btn-sm btn-success w-100 rounded-pill fw-bold select-btn"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#confirmAddModal"
+                        data-id="{{ item.id }}"
+                        data-title="{{ item.title }}"
+                        data-price="{{ item.price }}"
+                        data-thumb="{{ item.thumbnail }}"
+                        data-desc="{{ item.description }}"
+                        data-stock="{{ item.stock }}"
+                        data-points="{{ (item.price * pc) | round | int }}">
+                    Select Item
+                </button>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<div class="modal fade" id="confirmAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <form action="" method="POST">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Review Product Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-5 text-center">
+                            <img id="m_img" src="" class="product-img-modal mb-3 shadow-sm">
+                            <div class="bg-light p-3 rounded-3 text-start">
+                                <p class="small mb-1 text-muted fw-bold">API STATUS</p>
+                                <div class="d-flex justify-content-between"><small>Price:</small><small class="fw-bold" id="m_api_price"></small></div>
+                                <div class="d-flex justify-content-between"><small>Stock:</small><small class="fw-bold" id="m_api_stock"></small></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-7">
+                            <h6 class="fw-bold mb-3" style="color: #ff9800;">Catalog Overrides</h6>
+                            <input type="hidden" name="api_id" id="m_api_id">
+                            <input type="hidden" name="item_image" id="m_item_image">
+
+                            <div class="mb-3">
+                                <label class="small fw-bold">Display Name</label>
+                                <input type="text" name="item_name" id="m_item_name" class="form-control rounded-pill">
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="small fw-bold mb-1">Custom Price (USD)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-end-0 rounded-start-pill">$</span>
+                            <input type="number" step="0.01" name="custom_usd" id="m_custom_usd" 
+                                class="form-control border-start-0 rounded-end-pill shadow-none" 
+                                placeholder="0.00" oninput="togglePricing('usd')">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="small fw-bold mb-1">Custom Price (Points)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="custom_points" id="m_custom_points" 
+                                class="form-control rounded-pill shadow-none" 
+                                placeholder="0" oninput="togglePricing('points')">
+                        </div>
+                    </div>
+                    <div class="col-12 mt-1">
+                        <small class="text-muted" style="font-size: 0.7rem;">
+                            * Set one to override the API. Leave both blank to use the default conversion.
+                        </small>
+                    </div>
+                </div>
+
+                            <div class="mb-3">
+                                <label class="small fw-bold">Default Description</label>
+                                <textarea id="m_desc" class="form-control rounded-4" rows="4" readonly style="font-size: 0.85rem; background: #fdfdfd;"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold text-white shadow-sm">Confirm & Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// This listener waits for the modal to start opening
+const confirmModal = document.getElementById('confirmAddModal');
+confirmModal.addEventListener('show.bs.modal', function (event) {
+    document.getElementById('m_custom_usd').value = "";
+    document.getElementById('m_custom_usd').disabled = false;
+    document.getElementById('m_custom_points').value = "";
+    document.getElementById('m_custom_points').disabled = false;
+    
+
+    // The button that triggered the modal
+    const button = event.relatedTarget;
+    
+    // Extract info from data-* attributes
+    const id = button.getAttribute('data-id');
+    const title = button.getAttribute('data-title');
+    const price = button.getAttribute('data-price');
+    const thumb = button.getAttribute('data-thumb');
+    const desc = button.getAttribute('data-desc');
+    const stock = button.getAttribute('data-stock');
+    const points = button.getAttribute('data-points');
+
+    // Update the modal's content
+    document.getElementById('m_custom_usd').placeholder = price;
+    document.getElementById('m_custom_points').placeholder = points;
+    document.getElementById('m_api_id').value = id;
+    document.getElementById('m_item_image').value = thumb;
+    document.getElementById('m_item_name').value = title;
+    document.getElementById('m_img').src = thumb;
+    document.getElementById('m_api_price').innerText = '$' + price;
+    document.getElementById('m_api_stock').innerText = stock;
+    document.getElementById('m_desc').value = desc;
+    document.getElementById('modalForm').action = "/sponsor/catalog-editor/add/" + id;
+});
+function togglePricing(source) {
+    const usdInput = document.getElementById('m_custom_usd');
+    const pointsInput = document.getElementById('m_custom_points');
+
+    if (source === 'usd') {
+        // If USD has a value, disable Points
+        pointsInput.disabled = usdInput.value.length > 0;
+        if(usdInput.value.length > 0) pointsInput.value = ""; 
+    } else {
+        // If Points has a value, disable USD
+        usdInput.disabled = pointsInput.value.length > 0;
+        if(pointsInput.value.length > 0) usdInput.value = "";
+    }
+}
+</script>
 {% endblock %}

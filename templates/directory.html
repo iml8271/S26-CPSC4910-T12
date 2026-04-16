@@ -55,8 +55,10 @@
                     <h5 class="mb-1" style="color: #424242; font-weight: 700;">
                         {% if user.role == 'driver' %}
                             {{ user.driver_profile.firstname }} {{ user.driver_profile.lastname }}
-                        {% else %}
+                        {% else if user.role == 'sponsor' %}
                             {{ user.sponsor_profile.firstname }} {{ user.sponsor_profile.lastname }}
+                        {% else if user.role == 'admin' %}
+                            {{ user.admin_profile.firstname }} {{ user.admin_profile.lastname }}
                         {% endif %}
                     </h5>
                     <div class="text-muted small text-truncate">{{ user.email }}</div>
