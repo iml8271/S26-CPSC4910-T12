@@ -157,12 +157,16 @@ def driver_view_org_rules():
 # CATALOG ------------------------------------------------
 @driver_bp.route("/dashboard/driver_catalog", methods=["GET"])
 def driver_catalog():
-    driver_link = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active=True).first()
-    catalog_entries = SponsorCatalog.query.filter_by( company_id=driver_link.company_id, is_active=True).all()
+    link_id = request.args.get("link_id", type=int)
+    driver_link = DriverCompanyLink.query.filter_by(id=link_id,driver_id=current_user.id,is_active=True).first()
+    if not driver_link:
+        flash("Catalog not found.", "danger")
+        return redirect(url_for("driver.mysponsors"))
+    catalog_entries = SponsorCatalog.query.filter_by(company_id=driver_link.company_id, is_active=True).all()
 
     items_to_display = [entry.item_info for entry in catalog_entries]
 
-    return render_template("driver/driver_catalog.html", profile=current_user, points=driver_link.current_points, items=items_to_display)
+    return render_template("driver/driver_catalog.html", profile=current_user, points=driver_link.current_points, items=items_to_display,link_id=link_id)
 
 
 @driver_bp.route("/driver_catalog/search", methods=["GET", "POST"])

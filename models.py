@@ -351,6 +351,8 @@ class Order(db.Model):
     dollar_price = db.Column(db.DECIMAL(10,2),nullable=False)
     point_price = db.Column(db.Integer ,nullable=False)
 
+    status = db.relationship("OrderStatus",back_populates="order",cascade="all,delete-orphan",uselist=False)
+
 class Order_Items(db.Model):
     __tablename__ = "order_items"
 
@@ -384,7 +386,34 @@ class OrderStatus(db.Model):
     link_id =  db.Column(db.Integer, db.ForeignKey('driver_company_link.id'), nullable=False)
     link = db.relationship("DriverCompanyLink")
     order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
+    order = db.relationship('Order', back_populates="status")
 
     status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived","canceled"
     
     update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+@event.listens_for(Order, 'after_insert')
+def create_initial_order_status(mapper, connection, target):
+    """
+    Automatically creates an 'ordered' status entry whenever a new Order is saved.
+    'target' is the actual Order instance that was just inserted.
+    """
+    
+    from models import DriverCompanyLink, OrderStatus # Local import to avoid circular dependencies
+    
+    # 1. Find the link_id
+    link = DriverCompanyLink.query.filter_by(
+        user_id=target.user_id, 
+        company_id=target.org_id
+    ).first()
+
+    if link:
+        # 2. Define the insert statement for OrderStatus
+        connection.execute(
+            OrderStatus.__table__.insert().values(
+                link_id=link.id,
+                order_id=target.order_id,
+                status="ordered",
+                update_date=datetime.now()
+            )
+        )
