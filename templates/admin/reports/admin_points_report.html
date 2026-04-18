@@ -1,51 +1,50 @@
 {% extends "base.html" %}
+
 {% block head %}
-    
+<title>Admin - Driver Points Ledger</title>
 {% endblock %}
+
 {% block body %}
 
-<div class="container">
-    <div class="header">
-        <h2>Driver Points Ledger</h2>
-    </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Driver ID</th>
-                <th>Driver First Name</th>
-                <th>Driver Last Name</th>
-                <th>Organization</th>
-                <th>Update Date</th>
-                <th>Reason</th>
-                <th>Change</th>
-                <th>New Balance</th>
+    <h2>Driver Points Ledger</h2>
 
+    <div class="mb-3">
+        <span class="text-muted"><i class="bi bi-shield-lock"></i> Secured Administrator Portal</span>
+    </div>
+
+    {% if history %}
+    <table class="table table-hover report-table">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Driver Name</th>
+                <th>Organization</th>
+                <th>Timestamp</th>
+                <th>Reason for Change</th>
+                <th class="text-end">Adjustment</th>
+                <th class="text-end">Final Balance</th>
             </tr>
         </thead>
         <tbody>
             {% for entry in history %}
             <tr>
-                <td class="driver-id">#{{ entry.user_id }}</td>
-                <td class="driver first name">{{ entry.driver_profile.firstname }}</td>
-                <td class="driver last name">{{ entry.driver_profile.lastname }}</td>
-                <td class="organization">{{ entry.driver_profile.company }}</td>
-                <td>
-                    <span class="date-sub">{{ entry.update_date.strftime('%Y-%m-%d') }}</span>
-                    <small style="color:#999">{{ entry.update_date.strftime('%H:%M') }}</small>
-                </td>
+                <td>#{{ entry.link.driver_profile.user_id }}</td>
+                <td><strong>{{ entry.link.driver_profile.firstname }} {{ entry.link.driver_profile.lastname }}</strong></td>
+                <td>{{ entry.link.company.company_name }}</td>
+                <td>{{ entry.update_date.strftime('%m/%d/%Y') }} <small class="text-muted">{{ entry.update_date.strftime('%I:%M %p') }}</small></td>
                 <td>{{ entry.reason }}</td>
-                <td>
-                    <span class="points-pill {{ 'gain' if entry.points_change >= 0 else 'loss' }}">
+                <td class="text-end">
+                    <span class="{{ 'text-success' if entry.points_change >= 0 else 'text-danger' }} fw-bold">
                         {{ "+" if entry.points_change > 0 }}{{ entry.points_change }}
                     </span>
                 </td>
-                <td><strong>{{ entry.current_points }}</strong></td>
+                <td class="text-end"><strong>{{ "{:,}".format(entry.current_points) }}</strong></td>
             </tr>
-
             {% endfor %}
         </tbody>
     </table>
-</div>
+    {% else %}
+    <p class="text-muted">No transaction history found for this period.</p>
+    {% endif %}
 
-{%endblock%}
+{% endblock %}

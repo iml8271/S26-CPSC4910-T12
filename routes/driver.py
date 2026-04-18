@@ -146,10 +146,8 @@ def mysponsors_apply(company_id):
     return redirect(url_for('driver.mysponsors_status'))
 
 # ORGANIZATION RULES ------------------------------------
-@driver_bp.route("/organization/rules", methods=["GET"])
-def driver_view_org_rules():
-    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
-    sourceORG = profile.company_id
+@driver_bp.route("/organization/rules<int:sourceORG>", methods=["GET"])
+def driver_view_org_rules(sourceORG):
     good_request = SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "good").all()
     bad_request =  SponsorCompanyRules.query.filter_by(company_id = sourceORG, nature = "bad").all()
     return render_template("/driver/driver_view_rules.html", request1 = good_request, request2 = bad_request)

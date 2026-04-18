@@ -32,7 +32,7 @@
             </div>
 
             <div class="col-sm-4">
-                <a href="{{ url_for('support.user_view_requests') }}" class="text-decoration-none">
+                <a href="{{ url_for('support.support_form') }}" class="text-decoration-none">
                     <div class="p-3 rounded-4 action-card h-100" style="background-color: #fffaf0; border: 1px solid #ffe0b2;">
                         <span style="font-size: 1.3rem;">💬</span>
                         <h6 class="mt-2 mb-0" style="color: #5d4037; font-weight: 600; font-size: 0.9rem;">Support</h6>
@@ -90,6 +90,11 @@
                            class="btn btn-sm rounded-pill px-3" 
                            style="background-color: #ff9800; color: white; font-weight: 600;">
                            Catalog
+                        </a>
+                        <a href="{{ url_for('driver.driver_view_org_rules', sourceORG=link.company_id) }}"
+                           class="btn btn-sm rounded-pill px-3"
+                           style="background-color: #ff9800; color: white; font-weight: 600;">
+                           Driving Rules
                         </a>
                         <a href="{{ url_for('view_company_profile', company_id=link.company_id) }}" 
                            class="btn btn-sm rounded-pill px-3" 

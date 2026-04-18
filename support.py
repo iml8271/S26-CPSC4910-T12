@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, DriverCompanyLink
 from datetime import datetime, timedelta
 import os
 
@@ -15,8 +15,7 @@ supp_bp = Blueprint("support",__name__)
 @login_required
 def submit_req():
     sourceID = current_user.id
-    profile = DriverProfile.query.filter_by(user_id=current_user.id).first()
-    sourceORG = profile.company_id
+    sourceORG = DriverCompanyLink.query.filter_by(driver_id=current_user.id, is_active = True).first().company_id
     rType = request.form.get("request_type")
     details = request.form.get("details")
 
@@ -24,7 +23,7 @@ def submit_req():
 
     db.session.add(new_req)
     db.session.commit()
-    return redirect(url_for('view_driver_dashboard'))
+    return redirect(url_for('dashboard'))
 
 
 @supp_bp.route('/admin/requests', methods=['GET'])
@@ -64,17 +63,17 @@ def admin_view_sponsor():
 @supp_bp.route('/sponsor/requests', methods=['GET'])
 @login_required
 def sponsor_view_requests():
-    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id).order_by(SupportRequest.creation_date.desc())
+    all_requests = SupportRequest.query.filter_by(source_org=current_user.sponsor_profile.company_id).order_by(SupportRequest.creation_date.desc())
 
-    return render_template('support_supp_req_view.html', requests=all_requests)
+    return render_template('support/sponsor_supp_req_view.html', requests=all_requests)
 
 @supp_bp.route('/sponsor/requests/open', methods=['GET'])
 @login_required
 def sponsor_view_requests_open():
-    all_requests = SupportRequest.query.filter_by(source_org=current_user.company_id, status='Open')\
+    all_requests = SupportRequest.query.filter_by(source_org=current_user.sponsor_profile.company_id, status='Open')\
                                                     .order_by(SupportRequest.creation_date.desc())
 
-    return render_template('support_supp_req_view.html', requests=all_requests)
+    return render_template('support/sponsor_supp_req_view.html', requests=all_requests)
 
 
 

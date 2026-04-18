@@ -1,28 +1,83 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Support Form Submission</title>
+<title>Support - Form Submission</title>
+<style>
+    /* Theme overrides for mellow orange buttons and focus states */
+    .btn-primary {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-primary:hover {
+        background-color: #a04000 !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #edbb99;
+        box-shadow: 0 0 0 0.25rem rgba(211, 84, 0, 0.25);
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<h1>Support Request Form</h1>
-<p>Here, you can request help from either a team member of your sponsor, or a member of our own team!</p>
 
-<form action="{{ url_for('support.submit_req') }}" method="POST">
-    <label for="request_type"> What would you like help with? </label>
-    <select name="request_type" id="request_type">
-        <option value="ordering">Placing an Order</option>
-        <option value="balance">My Point Balance</option>
-        <option value="application">My Application to a Sponsor Organization</option>
-        <option value="account">My Account Information</option>
-        <option value="Other">Other</option>
-    </select>
-    <br>
+    <h2>Support Request Form</h2>
 
-    <label for="details"> Please tell us about your problem </label>
-    <textarea id="details" name="details" rows="4" cols="50"></textarea>
-    <br>
+    <div class="mb-4">
+        <p class="text-muted">
+            Need assistance? Submit the form below to request help from either your
+            sponsor team or our support staff.
+        </p>
+    </div>
 
-    <button type="submit">Submit Request</button>
-</form>
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-light shadow-sm">
+                <div class="card-body p-4">
+                    <form action="{{ url_for('support.submit_req') }}" method="POST">
+
+                        <div class="mb-3">
+                            <label for="request_type" class="form-label fw-bold small text-uppercase text-secondary">
+                                What would you like help with?
+                            </label>
+                            <select name="request_type" id="request_type" class="form-select">
+                                <option value="ordering">Placing an Order</option>
+                                <option value="balance">My Point Balance</option>
+                                <option value="application">My Application to a Sponsor Organization</option>
+                                <option value="account">My Account Information</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="details" class="form-label fw-bold small text-uppercase text-secondary">
+                                Please tell us about your problem
+                            </label>
+                            <textarea
+                                id="details"
+                                name="details"
+                                class="form-control"
+                                rows="5"
+                                placeholder="Provide as much detail as possible..."
+                                required
+                            ></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Submit Request
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-link text-muted text-decoration-none small">
+                    &larr; Return to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}

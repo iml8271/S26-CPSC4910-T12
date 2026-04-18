@@ -1,28 +1,82 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Add Organization Rules</title>
+<title>Sponsor - Add Rule</title>
+<style>
+    /* Theme overrides for mellow orange buttons and focus states */
+    .btn-primary {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-primary:hover {
+        background-color: #a04000 !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #edbb99;
+        box-shadow: 0 0 0 0.25rem rgba(211, 84, 0, 0.25);
+    }
+    .card-header-custom {
+        background-color: #fcfcfc;
+        border-bottom: 1px solid #edbb99;
+        font-weight: 700;
+        color: #a04000;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<h1>Organization Rules</h1>
-<p>Add to the rules that govern what your organization views as good or bad driving behaviors.</p>
 
-<form action="{{ url_for('submit_rule') }}" method="POST">
-<label for="rule_type"> What would you like help with? </label>
-    <select name="rule_type" id="rule_type">
-        <option value="good">This rule describes a good driving behavior</option>
-        <option value="bad">This rule describes a bad driving behavior</option>
-    </select>
-    <br>
-    <label for="details"> Describe the rule:</label>
-    <br>
-    <textarea id="details" name="details" rows="4" cols="50"></textarea>
-    <br>
+    <h2>Add Organization Rule</h2>
+    <p class="text-muted mb-4">Define new criteria for evaluating driving behaviors within your organization.</p>
 
-    <button type="submit">Submit</button>
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-light shadow-sm">
+                <div class="card-header card-header-custom p-3">
+                    New Rule Definition
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('sponsor.submit_rule') }}" method="POST">
 
-</form>
+                        <div class="mb-3">
+                            <label for="rule_type" class="form-label fw-bold small text-uppercase text-secondary">Behavior Classification</label>
+                            <select name="rule_type" id="rule_type" class="form-select">
+                                <option value="good">Good Driving Behavior (Points Gain)</option>
+                                <option value="bad">Bad Driving Behavior (Points Loss)</option>
+                            </select>
+                        </div>
 
+                        <div class="mb-4">
+                            <label for="details" class="form-label fw-bold small text-uppercase text-secondary">Rule Description</label>
+                            <textarea
+                                id="details"
+                                name="details"
+                                class="form-control"
+                                rows="4"
+                                placeholder="e.g., Maintaining a safe following distance for over 50 miles..."
+                                required
+                            ></textarea>
+                            <div class="form-text mt-2 small">This description will be visible to drivers in the Organization Rules list.</div>
+                        </div>
 
-{%endblock%}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                Submit New Rule
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-3 text-center">
+                <a href="{{ url_for('sponsor.view_org_rules') }}" class="btn btn-link text-muted text-decoration-none small">
+                    &larr; Back to Rules List
+                </a>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

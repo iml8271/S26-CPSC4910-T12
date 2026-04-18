@@ -1,21 +1,110 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Reports</title>
+<title>Reports & Administration</title>
+<style>
+    .report-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #eef0f2;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none !important;
+        display: flex;
+        align-items: center;
+        height: 100%;
+    }
+    .report-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        border-color: #ff9800;
+    }
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.25rem;
+        font-size: 1.25rem;
+    }
+    .bg-soft-blue { background-color: #e3f2fd; color: #1976d2; }
+    .bg-soft-orange { background-color: #fff3e0; color: #f57c00; }
+    .bg-soft-green { background-color: #e8f5e9; color: #388e3c; }
+    .bg-soft-purple { background-color: #f3e5f5; color: #7b1fa2; }
+
+    .report-title {
+        color: #424242;
+        font-weight: 700;
+        margin-bottom: 2px;
+        display: block;
+    }
+    .report-desc {
+        color: #9e9e9e;
+        font-size: 0.85rem;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<a href="{{ url_for('report.supportrequests') }}">Support Requests</a>
-<br>
+<div class="container py-5">
+    <div class="mb-5">
+        <h2 style="color: #5d4037; font-weight: 800; margin-bottom: 5px;">Reports <span style="color: #ff9800;">& Data</span></h2>
+        <p class="text-muted">Access system logs, driver analytics, and financial invoicing.</p>
+    </div>
 
-<a href="{{ url_for('report.driver_report') }}">Driver Report</a>
-<br>
-<a href="{{ url_for('report.points_report') }}">Points Report</a>
-<br>
-<a href="{{ url_for('report.audit_log') }}">Audit Log</a>
-<br>
-<a href="{{ url_for('invoice.invoice_create') }}">Create Invoice</a>
-<a href="{{ url_for('invoice.invoice_list') }}">Invoice List</a>
+    <h5 class="text-uppercase mb-4" style="font-size: 0.8rem; letter-spacing: 1px; color: #9e9e9e; font-weight: 800;">Operational Analytics</h5>
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('report.driver_report') }}" class="report-card">
+                <div class="icon-box bg-soft-blue">📊</div>
+                <div>
+                    <span class="report-title">Driver Report</span>
+                    <span class="report-desc">Detailed performance and activity logs.</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('report.points_report') }}" class="report-card">
+                <div class="icon-box bg-soft-orange">🏆</div>
+                <div>
+                    <span class="report-title">Points Report</span>
+                    <span class="report-desc">Track rewards and point distributions.</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('report.audit_log') }}" class="report-card">
+                <div class="icon-box bg-soft-green">📜</div>
+                <div>
+                    <span class="report-title">Audit Log</span>
+                    <span class="report-desc">System-wide event tracking and security.</span>
+                </div>
+            </a>
+        </div>
+    </div>
 
-
+    <h5 class="text-uppercase mb-4" style="font-size: 0.8rem; letter-spacing: 1px; color: #9e9e9e; font-weight: 800;">Financial Management</h5>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <a href="{{ url_for('invoice.invoice_create') }}" class="report-card border-start border-4 border-success">
+                <div class="icon-box bg-light text-success">➕</div>
+                <div>
+                    <span class="report-title">Create New Invoice</span>
+                    <span class="report-desc">Generate a new billing statement for sponsors.</span>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{{ url_for('invoice.invoice_list') }}" class="report-card border-start border-4 border-dark">
+                <div class="icon-box bg-light text-dark">📁</div>
+                <div>
+                    <span class="report-title">Invoice List</span>
+                    <span class="report-desc">View history and payment status of all invoices.</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
