@@ -21,8 +21,8 @@ import os
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "giggle-gang"
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://team12:Team12Password@cpsc4910-s26.cobd8enwsupz.us-east-1.rds.amazonaws.com:3306/Team12_DB'
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pointfleetdb.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://team12:Team12Password@cpsc4910-s26.cobd8enwsupz.us-east-1.rds.amazonaws.com:3306/Team12_DB'
+#app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///pointfleetdb.db"
 app.config["SECRET_KEY"] = "giggle-gang"
 
 #Bind db
