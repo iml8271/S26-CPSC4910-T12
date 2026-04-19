@@ -225,4 +225,4 @@ def view_company_profile(company_id):
     return render_template("company/company_viewcard.html", company=company)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000)
