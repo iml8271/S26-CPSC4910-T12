@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS support_requests (
 CREATE TABLE IF NOT EXISTS password_changes (
     user_id     INT             NOT NULL,
     date        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    change      VARCHAR(250)    NOT NULL,
+    `change`      VARCHAR(250)    NOT NULL,
     PRIMARY KEY (user_id),
     UNIQUE (user_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -317,7 +317,7 @@ AFTER UPDATE ON users
 FOR EACH ROW
 BEGIN
     IF OLD.password <> NEW.password THEN
-        INSERT INTO password_changes (user_id, date, change)
+        INSERT INTO password_changes (user_id, date, `change`)
         VALUES (NEW.id, NOW(), 'Password updated');
     END IF;
 END$$
