@@ -391,6 +391,7 @@ class OrderStatus(db.Model):
     status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived"
     
     update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    advance_after = db.Column(db.DateTime)
 '''
 @event.listens_for(Order, 'after_insert')
 def create_initial_order_status(mapper, connection, target):
