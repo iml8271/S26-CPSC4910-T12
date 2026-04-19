@@ -247,7 +247,18 @@ def place_order():
         )
         db.session.add(new_item)
 
-    driver_link.current_points -= data['total_points']
+    points_spent = data['total_points']
+    driver_link.current_points -= points_spent
+
+    history_entry = DriverPointsHistory(
+        link_id=driver_link.id,
+        points_change=-points_spent,
+        current_points=driver_link.current_points,
+        reason=f"Order #{new_order.order_id} placed",
+        update_date=datetime.now(),
+        sponsor_user_id=None
+    )
+    db.session.add(history_entry)
 
     db.session.commit()
     return jsonify({"status": "success", "order_id": new_order.order_id})
