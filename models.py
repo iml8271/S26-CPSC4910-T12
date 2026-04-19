@@ -158,7 +158,7 @@ class DriverPointsHistory(db.Model):
     # Sponsor Records
     sponsor_user = db.relationship("SponsorProfile")
     sponsor_user_id = db.Column(db.Integer,db.ForeignKey("sponsor_profile.user_id"),nullable=True)      
-
+'''
 @event.listens_for(DriverPointsHistory, 'after_insert')
 def update_link_points(mapper, connection, target):
     # Everytime a record is added, update link's points
@@ -172,7 +172,7 @@ def update_link_points(mapper, connection, target):
         .where(link_table.c.id == target.link_id)
         .values(current_points=link_table.c.current_points + target.points_change)
     )
-
+'''
 class DriverAlerts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     driver_id = db.Column(db.Integer, db.ForeignKey('driver_profile.user_id'), unique=True)
@@ -183,7 +183,7 @@ class DriverAlerts(db.Model):
 
     # Use back_populates instead of backref
     driver = db.relationship('DriverProfile', back_populates="alerts")
-
+'''
     @event.listens_for(DriverProfile, 'after_insert')
     def create_driver_alerts(mapper, connection, target):
         alerts_table = DriverAlerts.__table__
@@ -194,7 +194,7 @@ class DriverAlerts(db.Model):
                 order_alerts=True
             )
         )
-
+'''
 
 ## SPONSOR -----
 class SponsorProfile(db.Model):
@@ -391,7 +391,7 @@ class OrderStatus(db.Model):
     status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived","canceled"
     
     update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
-
+'''
 @event.listens_for(Order, 'after_insert')
 def create_initial_order_status(mapper, connection, target):
     """
@@ -417,3 +417,4 @@ def create_initial_order_status(mapper, connection, target):
                 update_date=datetime.now()
             )
         )
+'''
