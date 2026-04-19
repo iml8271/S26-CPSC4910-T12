@@ -47,4 +47,19 @@
     <p class="text-muted">No transaction history found for this period.</p>
     {% endif %}
 
+    <div class="card bg-light border-light shadow-sm">
+    <div class="card-body">
+        <h5 class="section-header mb-3">Filter by a Specific Driver</h5>
+        <form action="{{ url_for('report.points_report_specific') }}" method="POST" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label for="rr_target" class="form-label small fw-bold text-uppercase">Driver ID Number</label>
+                <input type="text" id="rr_target" name="rr_target" class="form-control form-control-sm" placeholder="e.g. 101" required>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-primary px-4">Apply Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}

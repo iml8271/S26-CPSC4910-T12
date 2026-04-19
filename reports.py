@@ -52,6 +52,24 @@ def points_report():
 
     return render_template("admin/reports/admin_points_report.html", history=request)
 
+@report_bp.route("/reports/points", methods=["GET", "POST"])
+@login_required
+def points_report_specific():
+    if request.method == "POST":
+        target = request.form.get("rr_target")
+    else:
+        target = None
+
+    if not target:
+        return redirect(url_for('reports.some_index_page'))
+
+    history = db.session.query(DriverPointsHistory) \
+        .join(DriverCompanyLink) \
+        .join(DriverProfile) \
+        .filter(DriverProfile.user_id == target).all()  # Use .filter() for specific column matching
+
+    return render_template("admin/reports/admin_points_report.html", history=history)
+
 @report_bp.route("/audit-log")
 def audit_log():
     from models import AuditLog
