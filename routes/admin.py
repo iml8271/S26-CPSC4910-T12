@@ -39,6 +39,24 @@ def restrict_to_admin():
         flash("Admin profile not found. Please contact an admin.", "danger")
         return redirect(url_for('dashboard'))
     
+# SETTINGS----
+@admin_bp.route("/settings",methods=["GET","POST"])
+def admin_settings():
+    admin = g.profile
+    if request.method == "POST":
+        try:
+            firstname = request.form.get("firstname").strip()
+            lastname = request.form.get("lastname").strip()
+            admin.firstname = firstname
+            admin.lastname = lastname
+            db.session.commit()
+            flash("Settings updated successfully!", "success")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating settings: {e}")
+            flash("An error occurred while saving.", "danger")
+    return render_template("admin/admin_personal.html", admin=admin)
+
 @admin_bp.route("/master_signup", methods=["GET","POST"])
 def master_signup():
     all_companies = SponsorCompany.query.all()
@@ -399,6 +417,7 @@ def impersonate_user(user_id):
     # Store the real admin's ID in session before switching
     session["impersonating_as"] = target.id
     session["real_admin_id"] = current_user.id
+    session["real_user_role"] = current_user.role
 
     '''
     log_audit_event(
@@ -428,13 +447,14 @@ def end_impersonation():
         flash("Could not restore admin session.", "danger")
         return redirect(url_for("auth.handle_login"))
 
+    '''
     log_audit_event(
         "impersonation_end",
         user_id=real_admin.id,
         username=real_admin.username,
         details=f"Ended impersonation of user ID: {session.get('impersonating_as', 'unknown')}"
     )
-
+    '''
     login_user(real_admin)
     flash("Impersonation ended. You are back as yourself.", "success")
     return redirect(url_for("dashboard"))

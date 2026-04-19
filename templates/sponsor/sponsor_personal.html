@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Sponsor Settings</title>
+{% endblock %}
+
+{% block body %}
+<div class="container py-5">
+    <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'message' else 'success' }} alert-dismissible fade show rounded-pill px-4 mb-4 border-0 shadow-sm" role="alert" style="background-color: #e8f5e9; color: #2e7d32;">
+                <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
+        <h1 class="h2 mb-4" style="color: #ff9800; font-weight: 700;">Settings ⚙️</h1>
+        
+        <form id="driver-settings-form" method="POST" action="{{ url_for('sponsor.sponsor_settings') }}">
+            
+            <h2 class="h5 mb-3" style="color: #795548; font-weight: 600;">📍 Personal Info</h2>
+            
+            <div class="mb-3">
+                <label for="firstname" class="form-label" style="color: #5d4037; font-weight: 600;">Firstname</label>
+                <input id="firstname" type="text" name="firstname" class="form-control rounded-pill" 
+                       placeholder="John" value="{{ sponsor.firstname }}">
+            </div>
+            <div class="mb-3">
+                <label for="lastname" class="form-label" style="color: #5d4037; font-weight: 600;">Lastname</label>
+                <input id="lastname" type="text" name="lastname" class="form-control rounded-pill" 
+                       placeholder="Smith" value="{{ sponsor.lastname }}">
+            </div>
+            <div class="mt-4 d-grid">
+                <button type="submit" class="btn btn-warning btn-lg rounded-pill text-white fw-bold shadow-sm">Update Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

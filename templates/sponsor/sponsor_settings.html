@@ -1,17 +1,41 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Sponsor-Settings</title>
+<title>Sponsor Settings</title>
 {% endblock %}
 
 {% block body %}
 <div class="container py-5">
     <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
         
-        <h2 class="mb-4" style="color: #ff9800; font-weight: 700;">Sponsor Settings 🏢</h2>
+        <h2 class="mb-4" style="color: #5d4037; font-weight: 700;">{{ sponsor.company.name }} <span style="color: #ff9800;">Settings</span> 🏢</h2>
         
-        <form method="POST" action="{{ url_for('sponsor.sponsor_settings') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ url_for('sponsor.company_settings') }}" enctype="multipart/form-data">
             
+            <div class="mb-4 p-4 rounded-4" style="background-color: #fff3e0; border: 1px solid #ffe0b2;">
+                <label for="conversion-rate" class="form-label" style="color: #5d4037; font-weight: 700;">Point Conversion Rate</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-pill" style="color: #e65100; font-weight: 600;">$1.00 = </span>
+                    <input 
+                        type="number" 
+                        id="conversion-rate" 
+                        name="point_conversion" 
+                        class="form-control border-start-0 rounded-end-pill px-3"
+                        step="0.0001" 
+                        min="0.0001"
+                        placeholder="e.g. 0.01"
+                        value="{{ sponsor.company.points_conversion or '0.01' }}"
+                        required
+                    >
+                </div>
+                <div class="form-text mt-2" style="color: #795548; font-size: 0.85rem;">
+                    <i class="bi bi-info-circle me-1"></i> 
+                    Set how many dollars 1 point is worth (e.g., <strong>0.01</strong> means 100 pts = $1.00).
+                </div>
+            </div>
+
+            <hr class="my-4" style="opacity: 0.1;">
+
             <div class="mb-4">
                 <label for="sponsor-logo" class="form-label" style="color: #5d4037; font-weight: 600;">Update Company Logo</label>
                 <input 
@@ -20,13 +44,14 @@
                     name="sponsor_logo" 
                     class="form-control rounded-pill"
                     accept="image/png, image/jpeg"
-                    required
                 >
                 <div class="form-text" style="color: #795548;">Allowed formats: PNG, JPG</div>
             </div>
 
             <div class="d-grid mb-4">
-                <button type="submit" class="btn btn-custom btn-lg rounded-pill">Upload Logo</button>
+                <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-white shadow-sm">
+                    Save Changes
+                </button>
             </div>
         </form>
 
@@ -36,8 +61,8 @@
             <img 
                 src="{{ url_for('static', filename=sponsor.company.logo_filename) }}" 
                 alt="Sponsor Logo"
-                class="img-fluid rounded"
-                style="max-width: 150px; height: auto;"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 150px; height: auto; border: 3px solid white;"
             >
         </div>
         {% endif %}

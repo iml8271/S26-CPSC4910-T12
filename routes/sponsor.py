@@ -16,6 +16,11 @@ sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
 @sponsor_bp.before_request
 def restrict_to_sponsors():
+    if request.endpoint == "sponsor.end_impersonation":
+        real_sponsor_id = session.get("real_sponsor_id")
+        if real_sponsor_id:
+            return None  # Let it through
+        abort(403)
     # User has to be logged in
     if not current_user.is_authenticated:
         flash("Please log in to access this page.", "warning")
@@ -52,41 +57,66 @@ def role_required(*roles):
 def sponsor_settings():
     sponsor = g.profile
     if request.method == "POST":
-        if "sponsor_logo" not in request.files:
-            flash("No file selected.")
-            return redirect(url_for("sponsor_settings"))
+        try:
+            firstname = request.form.get("firstname").strip()
+            lastname = request.form.get("lastname").strip()
+            sponsor.firstname = firstname
+            sponsor.lastname = lastname
+            db.session.commit()
+            flash("Settings updated successfully!", "success")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating settings: {e}")
+            flash("An error occurred while saving.", "danger")
+    return render_template("sponsor/sponsor_personal.html", sponsor=sponsor)
 
-        file = request.files["sponsor_logo"]
-
-        if file.filename == "":
-            flash("No file selected.")
-            return redirect(url_for("sponsor_settings"))
-        
-        allowed_types = {"png","jpg","jpeg"}
-        extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
-
-        if extenstion in allowed_types:
-            filename = secure_filename(file.filename)
-
-            unique_filename = f"logo_co_{sponsor.company_id}_{filename}"
-            upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
-            os.makedirs(upload_path, exist_ok=True)
-
-            save_path = os.path.join(upload_path, unique_filename)
-            file.save(save_path)
-
-            if sponsor.company:
-                sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
+@sponsor_bp.route("/company_settings",methods=["GET","POST"])
+def company_settings():
+    sponsor = g.profile
+    if request.method == "POST":
+        try:
+            points_conversion = request.form.get("point_conversion")
+            if points_conversion:
+                sponsor.company.points_conversion = points_conversion
                 db.session.commit()
-                flash("Logo uploaded successfully!", "success")
-            else:
-                flash("Error: No associated company found.", "danger")
-            
-            return redirect(url_for("sponsor.sponsor_settings"))
-        else:
-            flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
-            return redirect(url_for("sponsor.sponsor_settings"))
+            if "sponsor_logo" in request.files:
+                flash("No file selected.")
+                return redirect(url_for("sponsor_settings"))
 
+            file = request.files["sponsor_logo"]
+
+            if file.filename == "":
+                flash("No file selected.")
+                return redirect(url_for("sponsor_settings"))
+            
+            allowed_types = {"png","jpg","jpeg"}
+            extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
+
+            if extenstion in allowed_types:
+                filename = secure_filename(file.filename)
+
+                unique_filename = f"logo_co_{sponsor.company_id}_{filename}"
+                upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
+                os.makedirs(upload_path, exist_ok=True)
+
+                save_path = os.path.join(upload_path, unique_filename)
+                file.save(save_path)
+
+                if sponsor.company:
+                    sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
+                    db.session.commit()
+                    flash("Logo uploaded successfully!", "success")
+                else:
+                    flash("Error: No associated company found.", "danger")
+                
+                return redirect(url_for("sponsor.sponsor_settings"))
+            else:
+                flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
+                return redirect(url_for("sponsor.sponsor_settings"))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating settings: {e}")
+            flash("An error occurred while saving.", "danger")
     return render_template("sponsor/sponsor_settings.html", sponsor=sponsor)
 
 ## ACTIVE DRIVER_LIST --------------------------------
@@ -151,6 +181,14 @@ def update_points(driver_id):
         flash(f"Error updating points: {str(e)}", "danger")
         
     return redirect(url_for('sponsor.view_drivers'))
+
+@sponsor_bp.route("/remove_link/<int:driver_id>", methods=["POST"])
+def sponsor_remove_link(driver_id):
+    link = DriverCompanyLink.query.filter_by(
+        driver_id=driver_id,
+        company_id=g.profile.company.id).first()
+    remove_link(link_id=link.id,remover_id=g.profile.user_id)
+    return redirect(request.referrer or url_for('sponsor.view_drivers'))
 
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
 def add_drivers():
@@ -409,6 +447,60 @@ def driver_reject():
         flash("Unable to process rejection.", "danger")
 
     return redirect(url_for("sponsor.pending_drivers"))
+
+@sponsor_bp.route("/impersonate/<int:user_id>", methods=["POST"])
+def impersonate_user(user_id):
+    target = Users.query.get_or_404(user_id)
+
+    if target.role == "admin":
+        flash("Cannot impersonate admin.", "danger")
+        return redirect(url_for("dashboard"))
+
+    # Store the real admin's ID in session before switching
+    session["impersonating_as"] = target.id
+    session["real_sponsor_id"] = current_user.id
+    session["real_user_role"] = current_user.role
+
+    '''
+    log_audit_event(
+        "impersonation_start",
+        user_id=current_user.id,
+        username=current_user.username,
+        details=f"Impersonating user: {target.username} (ID: {target.id})"
+    )
+    '''
+
+    login_user(target)
+    flash(f"You are now impersonating {target.username}. Click 'End Impersonation' to return.", "warning")
+    return redirect(url_for("dashboard"))
+
+
+@sponsor_bp.route("/impersonate/end", methods=["POST"])
+def end_impersonation():
+    real_sponsor_id = session.pop("real_sponsor_id", None)
+    session.pop("impersonating_as", None)
+
+    if not real_sponsor_id:
+        flash("No impersonation session found.", "danger")
+        return redirect(url_for("dashboard"))
+
+    real_sponsor = Users.query.get(real_sponsor_id)
+    if not real_sponsor or real_sponsor.role != "sponsor":
+        flash("Could not restore sponsor session.", "danger")
+        print("Could not restore sponsor session.")
+        return redirect(url_for("auth.handle_login"))
+
+    '''
+    log_audit_event(
+        "impersonation_end",
+        user_id=real_admin.id,
+        username=real_admin.username,
+        details=f"Ended impersonation of user ID: {session.get('impersonating_as', 'unknown')}"
+    )
+    '''
+    login_user(real_sponsor)
+    flash("Impersonation ended. You are back as yourself.", "success")
+    return redirect(url_for("dashboard"))
 
 # ORGANIZATION RULES --------------------------------------
 @sponsor_bp.route("/organization/rules", methods=["GET"])

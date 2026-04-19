@@ -40,15 +40,14 @@ def restrict_to_driver():
 def driver_settings():
     driver = g.profile
     try: 
-        # 1. Ensure preferences object exists (One-to-One relationship)
-        if driver.alerts is None:
-            driver.alerts = DriverAlerts(driver_id=driver.user_id)
-            db.session.add(driver.alerts)
-            db.session.commit()
-            # Refresh driver object to link preference
-            db.session.refresh(driver)
-
         if request.method == "POST":
+            # 1. Ensure preferences object exists (One-to-One relationship)
+            if driver.alerts is None:
+                driver.alerts = DriverAlerts(driver_id=driver.user_id)
+                db.session.add(driver.alerts)
+                db.session.commit()
+                # Refresh driver object to link preference
+                db.session.refresh(driver)
             # Address Logic
             streetname = request.form.get("streetname")
             city = request.form.get("city")
