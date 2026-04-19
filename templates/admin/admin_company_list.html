@@ -26,9 +26,9 @@
                     <h5 class="mt-2" style="color: #5d4037; font-weight: 700;">{{ company.name }}</h5>
                 </div>
                 <div class="text-center mt-auto">
-                    <a href="#" 
+                    <a href="{{ url_for('admin.company_settings', company_id=company.id) }}" 
                        class="btn btn-link btn-sm mt-2 text-decoration-none" style="color: #795548;">
-                        View All Employees
+                        Manage Details
                     </a>
                 </div>
 

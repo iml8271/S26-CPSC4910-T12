@@ -79,37 +79,33 @@ def company_settings():
             if points_conversion:
                 sponsor.company.points_conversion = points_conversion
                 db.session.commit()
+                flash("Points Convert saved!", "success")
             if "sponsor_logo" in request.files:
-                flash("No file selected.")
-                return redirect(url_for("sponsor_settings"))
+                file = request.files["sponsor_logo"]
 
-            file = request.files["sponsor_logo"]
-
-            if file.filename == "":
-                flash("No file selected.")
-                return redirect(url_for("sponsor_settings"))
-            
-            allowed_types = {"png","jpg","jpeg"}
-            extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
-
-            if extenstion in allowed_types:
-                filename = secure_filename(file.filename)
-
-                unique_filename = f"logo_co_{sponsor.company_id}_{filename}"
-                upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
-                os.makedirs(upload_path, exist_ok=True)
-
-                save_path = os.path.join(upload_path, unique_filename)
-                file.save(save_path)
-
-                if sponsor.company:
-                    sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
-                    db.session.commit()
-                    flash("Logo uploaded successfully!", "success")
-                else:
-                    flash("Error: No associated company found.", "danger")
+                if file.filename == "":
                 
-                return redirect(url_for("sponsor.sponsor_settings"))
+                    allowed_types = {"png","jpg","jpeg"}
+                    extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
+
+                    if extenstion in allowed_types:
+                        filename = secure_filename(file.filename)
+
+                        unique_filename = f"logo_co_{sponsor.company_id}_{filename}"
+                        upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
+                        os.makedirs(upload_path, exist_ok=True)
+
+                        save_path = os.path.join(upload_path, unique_filename)
+                        file.save(save_path)
+
+                        if sponsor.company:
+                            sponsor.company.logo_filename = f"images/uploads/logos/{unique_filename}"
+                            db.session.commit()
+                            flash("Logo uploaded successfully!", "success")
+                        else:
+                            flash("Error: No associated company found.", "danger")
+                    
+                    return redirect(url_for("sponsor.sponsor_settings"))
             else:
                 flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
                 return redirect(url_for("sponsor.sponsor_settings"))
@@ -540,11 +536,7 @@ def submit_rule():
     return redirect(url_for("sponsor.view_org_rules"))
 
 # Hardcoded catalog
-catalog_items = [
-    {"name": "Jar Of Dirt", "description": "A mysterious jar of dirt", "price": 1},
-    {"name": "CB Radio", "description": "Stay connected on the road", "price": 1500},
-    {"name": "$50 Taco Bell Gift Card", "description": "Redeemable at any location", "price": 3000},
-]
+
 catalog_price_range = {"min": 0, "max": 10000}
 @sponsor_bp.route("/sponsor/sponsor_catalog_editor")
 def sponsor_catalog_editor():

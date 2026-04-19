@@ -10,6 +10,7 @@ from sqlalchemy import or_,not_
 from decimal import Decimal
 from audit import log_audit_event
 from datetime import datetime
+import os
 
 
 admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
@@ -113,6 +114,52 @@ def admin_sponsor_list():
 def all_companies_list():
     companies = SponsorCompany.query.all()
     return render_template("admin/admin_company_list.html",companies=companies)
+
+
+@admin_bp.route("/company_settings/<int:company_id>",methods=["GET","POST"])
+def company_settings(company_id):
+    admin = g.profile
+    company = SponsorCompany.query.filter_by(id=company_id).first()
+    if request.method == "POST":
+        try:
+            points_conversion = request.form.get("point_conversion")
+            if points_conversion:
+                company.points_conversion = points_conversion
+                db.session.commit()
+                flash("Points Convert saved!", "success")
+            if "sponsor_logo" in request.files:
+                file = request.files["sponsor_logo"]
+
+                if file.filename:
+                    allowed_types = {"png","jpg","jpeg"}
+                    extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
+
+                    if extenstion in allowed_types:
+                        filename = secure_filename(file.filename)
+
+                        unique_filename = f"logo_co_{company_id}_{filename}"
+                        upload_path = os.path.join(current_app.static_folder, "images/uploads/logos")
+                        os.makedirs(upload_path, exist_ok=True)
+
+                        save_path = os.path.join(upload_path, unique_filename)
+                        file.save(save_path)
+
+                        if company:
+                            company.logo_filename = f"images/uploads/logos/{unique_filename}"
+                            db.session.commit()
+                            flash("Logo uploaded successfully!", "success")
+                        else:
+                            flash("Error: No associated company found.", "danger")
+                    return redirect(url_for("sponsor.sponsor_settings"))
+            else:
+                flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
+                return redirect(url_for("sponsor.sponsor_settings"))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating settings: {e}")
+            flash("An error occurred while saving.", "danger")
+    return render_template("admin/admin_company.html", company=company)
+
 
 @admin_bp.route("/directory", methods=["GET", "POST"])
 @admin_bp.route("/directory/<role>/<int:company_id>", methods=["GET", "POST"])
@@ -406,6 +453,9 @@ def update_points(driver_id):
         flash(f"Error updating points: {str(e)}", "danger")
         
     return redirect(request.referrer or url_for('admin.directory'))
+
+
+
 
 ## IMPERSONATE--------------------------
 ## IMPERSONATE --------------------------

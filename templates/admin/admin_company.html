@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Sponsor Settings</title>
+<title>Company Settings</title>
 {% endblock %}
 
 {% block body %}
 <div class="container py-5">
     <div class="card p-5 shadow-lg rounded-4 border-0" style="max-width: 600px; margin: 0 auto; border-top: 5px solid #ff9800 !important;">
         
-        <h2 class="mb-4" style="color: #5d4037; font-weight: 700;">{{ sponsor.company.name }} <span style="color: #ff9800;">Settings</span> 🏢</h2>
+        <h2 class="mb-4" style="color: #5d4037; font-weight: 700;">{{ company.name }} <span style="color: #ff9800;">Settings</span> 🏢</h2>
         
-        <form method="POST" action="{{ url_for('sponsor.company_settings') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ url_for('admin.company_settings',company_id=company.id) }}" enctype="multipart/form-data">
             
             <div class="mb-4 p-4 rounded-4" style="background-color: #fff3e0; border: 1px solid #ffe0b2;">
                 <label for="conversion-rate" class="form-label" style="color: #5d4037; font-weight: 700;">Point Conversion Rate</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-pill" style="color: #e65100; font-weight: 600;">1pt = $ </span>
+                    <span class="input-group-text bg-white border-end-0 rounded-start-pill" style="color: #e65100; font-weight: 600;">1pt = $</span>
                     <input 
                         type="number" 
                         id="conversion-rate" 
@@ -24,7 +24,7 @@
                         step="0.0001" 
                         min="0.0001"
                         placeholder="e.g. 0.01"
-                        value="{{ sponsor.company.points_conversion or '0.01' }}"
+                        value="{{ company.points_conversion or '0.01' }}"
                         required
                     >
                 </div>
@@ -55,11 +55,11 @@
             </div>
         </form>
 
-        {% if sponsor.company.logo_filename %}
+        {% if company.logo_filename %}
         <div class="text-center mt-3 p-3 rounded-4" style="background-color: #fffaf0; border: 1px dashed #ffe0b2;">
             <p class="text-muted mb-2" style="font-size: 0.9rem;">Current Logo:</p>
             <img 
-                src="{{ url_for('static', filename=sponsor.company.logo_filename) }}" 
+                src="{{ url_for('static', filename=company.logo_filename) }}" 
                 alt="Sponsor Logo"
                 class="img-fluid rounded shadow-sm"
                 style="max-width: 150px; height: auto; border: 3px solid white;"
