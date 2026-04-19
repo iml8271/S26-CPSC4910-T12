@@ -1,34 +1,88 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Request Details | {{ request.req_id }}</title>
+<title>Admin - Request #{{ request.req_id }}</title>
+<style>
+    /* Theme overrides for mellow orange buttons */
+    .btn-danger {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-danger:hover {
+        background-color: #a04000 !important;
+    }
+    .details-container {
+        background-color: #fff;
+        border: 1px solid #edbb99;
+        border-radius: 8px;
+        padding: 2rem;
+    }
+    .detail-label {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        color: #a04000;
+        margin-bottom: 0.25rem;
+    }
+    .detail-value {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+        color: #2d3436;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<h1>Request Details</h1>
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Request Details <span class="text-muted">#{{ request.req_id }}</span></h2>
+        <a href="{{ url_for('support.sponsor_view_requests') }}" class="btn btn-sm btn-outline-primary">Back to Dashboard</a>
+    </div>
 
+    <div class="details-container shadow-sm">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="detail-label">Status</div>
+                <div class="detail-value">
+                    <span class="badge {% if request.status|lower == 'open' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ request.status.upper() }}
+                    </span>
+                </div>
 
-<h2>Request ID</h2>
-<p>{{ request.req_id }}</p>
+                <div class="detail-label">Submitted By</div>
+                <div class="detail-value">{{ request.source_id }}</div>
 
-<h2>Submitted By</h2>
-<p>{{ request.source_id }}</p>
+                <div class="detail-label">Organization ID</div>
+                <div class="detail-value">{{ request.source_org }}</div>
+            </div>
 
-<h2>From</h2>
-<p>{{ request.source_org }}</p>
+            <div class="col-md-6">
+                <div class="detail-label">Request Type</div>
+                <div class="detail-value">{{ request.req_type.replace('_', ' ').title() }}</div>
 
-<h2>Request Type</h2>
-<p>{{ request.req_type }}</p>
+                <div class="detail-label">Submission Date</div>
+                <div class="detail-value">{{ request.creation_date.strftime('%m/%d/%Y %I:%M %p') if request.creation_date else 'N/A' }}</div>
+            </div>
+        </div>
 
-<h2>Request Description</h2>
-<p>{{ request.req_details }}</p>
+        <hr class="my-4" style="border-top: 1px solid #edbb99;">
 
-<h2>Status</h2>
-<p><strong>{{ request.status }}</strong></p>
+        <div class="row">
+            <div class="col-12">
+                <div class="detail-label">Request Description</div>
+                <div class="detail-value p-3 bg-light rounded" style="white-space: pre-wrap; min-height: 100px; border-left: 4px solid #d35400;">{{ request.req_details }}</div>
+            </div>
+        </div>
 
-<form action="{{ url_for('support.close_request', request_id=request.req_id) }}" method="POST">
-    <button type="submit" name="action" value="close">Close Request</button>
-</form>
+        {% if request.status|lower == 'open' %}
+        <div class="mt-4 pt-3 border-top">
+            <form action="{{ url_for('support.close_request', request_id=request.req_id) }}" method="POST">
+                <button type="submit" name="action" value="close" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this request?')">
+                    Close Request
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
 
 {% endblock %}

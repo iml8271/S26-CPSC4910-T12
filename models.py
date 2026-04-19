@@ -403,7 +403,7 @@ def create_initial_order_status(mapper, connection, target):
     
     # 1. Find the link_id
     link = DriverCompanyLink.query.filter_by(
-        user_id=target.user_id, 
+        driver_id=target.order_id,
         company_id=target.org_id
     ).first()
 

@@ -3,45 +3,99 @@
 {% block head %}
 <title>Sponsor - Support Dashboard</title>
 <style>
-    table { width: 100%;}
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-    th { background-color: #f4f4f4; }
-    .status-open { color: green; font-weight: bold; }
-    .status-other { color: gray; }
+    /* Theme overrides for the mellow orange style */
+    .btn-primary {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-primary:hover {
+        background-color: #a04000 !important;
+    }
+    .status-badge {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .status-open {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-closed {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
-<h1>All Support Requests</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Org ID</th>
-            <th>Type</th>
-            <th>Details</th>
-            <th>Submitted</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in requests %}
-        <tr>
-            <td>{{ request.req_id }}</td>
-            <td>{{ request.source_org }}</td>
-            <td>{{ request.req_type }}</td>
-            <td>{{ request.req_details}}</td>
-            <td>{{ request.creation_date}}</td>
-            <td>{{ request.status }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<br>
-<form action="{{ url_for('support.sponsor_view_requests_open') }}" method="GET">
-    <button type="submit">View Open Requests Only</button>
-</form>
-<br>
+    <h2>All Support Requests</h2>
+    <div class="filter-section p-3 mb-4 shadow-sm">
+        <div class="row g-3 align-items-end">
+            <div class="col-auto">
+                <form action="{{ url_for('support.admin_view_requests_open') }}" method="GET">
+                    <button type="submit" class="btn btn-primary">View Open Only</button>
+                </form>
+            </div>
+
+            <div class="col-auto">
+                <form action="{{ url_for('support.admin_view_requests_prevDays') }}" method="GET" class="d-flex align-items-end gap-2">
+                    <div>
+                        <label for="prevDays" class="form-label small fw-bold text-uppercase text-muted mb-1">Timeframe</label>
+                        <select name="prevDays" id="prevDays" class="form-select form-select-sm">
+                            <option value="7">Past 7 Days</option>
+                            <option value="14">Past 14 Days</option>
+                            <option value="30">Past 30 Days</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                </form>
+            </div>
+
+
+            <div class="col text-end">
+                <a href="{{ url_for('support.admin_view_requests') }}" class="btn btn-sm btn-link text-muted text-decoration-none">Reset All</a>
+            </div>
+        </div>
+    </div>
+
+    {% if requests %}
+    <table class="table table-hover report-table">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Org ID</th>
+                <th>Type</th>
+                <th>Details</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+            <tr>
+                <td><strong>#{{ request.req_id }}</strong></td>
+                <td>{{ request.source_org }}</td>
+                <td>{{ request.req_type.replace('_', ' ').title() }}</td>
+                <td class="text-truncate" style="max-width: 250px;">{{ request.req_details }}</td>
+                <td>{{ request.creation_date.strftime('%m/%d/%Y') }}</td>
+                <td>
+                    <span class="status-badge {{ 'status-open' if request.status|lower == 'open' else 'status-closed' }}">
+                        {{ request.status }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('support.view_req_details', req_id=request.req_id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No support requests found.</p>
+    {% endif %}
 
 {% endblock %}

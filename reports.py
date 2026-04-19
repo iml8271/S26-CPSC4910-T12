@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
 from authentication import auth_bp
-from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest
+from models import db,Users,DriverProfile,SponsorProfile,DriverPointsHistory,SponsorCompany, SupportRequest, DriverCompanyLink
 from datetime import datetime
 import os
 
@@ -31,8 +31,13 @@ def supportrequests():
 @report_bp.route("/reports/drivers",methods=["GET"])
 @login_required
 def driver_report():
-    stats = (db.session.query(DriverProfile.company,func.count(DriverProfile.id))
-             .group_by(DriverProfile.company).all())
+    stats = (db.session.query(SponsorCompany.name, func.count(DriverProfile.user_id))
+             .join(DriverCompanyLink, SponsorCompany.id == DriverCompanyLink.company_id)
+             .join(DriverProfile, DriverCompanyLink.driver_id == DriverProfile.user_id)
+             .group_by(SponsorCompany.name)
+             .all())
+
+
     tallied_requests = {item[0]: item[1] for item in stats}
 
     return render_template("admin/reports/admin_reports_drivers.html", tallies=tallied_requests)
@@ -41,6 +46,7 @@ def driver_report():
 @login_required
 def points_report():
     request = db.session.query(DriverPointsHistory) \
+        .join(DriverCompanyLink) \
         .join(DriverProfile) \
         .all()
 

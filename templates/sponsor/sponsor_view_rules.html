@@ -1,58 +1,104 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Organization Rules</title>
+<title>Admin - Organization Rules</title>
+<style>
+    /* Theme overrides for mellow orange styling */
+    .btn-primary {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-primary:hover {
+        background-color: #a04000 !important;
+    }
+    .btn-danger-outline {
+        color: #e74c3c;
+        border: 1px solid #e74c3c;
+    }
+    .btn-danger-outline:hover {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .section-header {
+        color: #a04000;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+    }
+</style>
 {% endblock %}
 
 {% block body %}
-<h1>Organization Rules</h1>
-<p>View the rules that govern what your organization views as good or bad driving behaviors.</p>
-<br><p>Good Driving Behaviors</p>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rule</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in request1 %}
-        <tr>
-            <td>{{request.id}} </td>
-            <td>{{request.rule}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table><br>
 
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Organization Rules</h2>
+        <a href="{{ url_for('sponsor.new_rule') }}" class="btn btn-primary">Add New Rule</a>
+    </div>
 
-<br><p>Bad Driving Behaviors</p>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rule</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in request2 %}
-        <tr>
-            <td>{{request.id}} </td>
-            <td>{{request.rule}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table><br><br>
+    <p class="text-muted mb-4">Governing rules for point adjustments based on driving behaviors.</p>
 
-<a href="{{ url_for('sponsor.new_rule') }}">Add a New Rule!</a><br>
-<br>
+    <div class="mb-5">
+        <h3 class="section-header mb-3"><i class="bi bi-plus-circle-fill text-success mr-2"></i> Good Driving Behaviors</h3>
+        <table class="table table-hover report-table">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 15%;">ID</th>
+                    <th>Rule Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in request1 %}
+                <tr>
+                    <td><strong>#{{ request.id }}</strong></td>
+                    <td>{{ request.rule }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-muted text-center py-3">No positive rules defined.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-<br><p>Remove a Rule from your organiztion:</p>
-<form action="{{ url_for('sponsor.delete_rule') }}" method="POST">
-    <label for="rr_target">Enter rule ID number:</label>
-    <input type="text" id="rr_target" name="rr_target"><br>
-    <br>
-    <button type="submit"> remove rule</button>
+    <div class="mb-5">
+        <h3 class="section-header mb-3"><i class="bi bi-dash-circle-fill text-danger mr-2"></i> Bad Driving Behaviors</h3>
+        <table class="table table-hover report-table">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 15%;">ID</th>
+                    <th>Rule Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in request2 %}
+                <tr>
+                    <td><strong>#{{ request.id }}</strong></td>
+                    <td>{{ request.rule }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-muted text-center py-3">No negative rules defined.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-</form>
-{%endblock%}
+    <div class="card bg-light border-light shadow-sm">
+        <div class="card-body">
+            <h5 class="section-header mb-3">Remove a Rule</h5>
+            <form action="{{ url_for('sponsor.delete_rule') }}" method="POST" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label for="rr_target" class="form-label small fw-bold text-uppercase">Rule ID Number</label>
+                    <input type="text" id="rr_target" name="rr_target" class="form-control form-control-sm" placeholder="e.g. 101" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-danger-outline px-4">Remove Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

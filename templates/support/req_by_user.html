@@ -1,47 +1,83 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>Support Dashboard</title>
+<title>Support - My Requests</title>
 <style>
-    table { width: 100%;}
-    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-    th { background-color: #f4f4f4; }
-    .status-open { color: green; font-weight: bold; }
-    .status-other { color: gray; }
+    /* Theme overrides for the mellow orange style */
+    .btn-primary {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .btn-primary:hover {
+        background-color: #a04000 !important;
+    }
+    .status-badge {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .status-open {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-closed {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
-<h1>All Support Requests</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Org ID</th>
-            <th>Type</th>
-            <th>Details</th>
-            <th>Submitted</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in requests %}
-        <tr>
-            <td><a href="{{ url_for('support.view_req_details', req_id=request.req_id) }}">{{request.req_id}}</a> </td>
-            <td>{{ request.source_org }}</td>
-            <td>{{ request.req_type }}</td>
-            <td>{{ request.req_details}}</td>
-            <td>{{ request.creation_date}}</td>
-            <td>{{ request.status }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<br>
-<form action="{{ url_for('support.user_view_requests_open') }}" method="GET">
-    <button type="submit">View Open Requests Only</button>
-</form>
-<br>
+    <h2>My Support Requests</h2>
+
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <form action="{{ url_for('support.user_view_requests_open') }}" method="GET">
+            <button type="submit" class="btn btn-primary">View Open Requests Only</button>
+        </form>
+        <span class="text-muted small">Total Requests: {{ requests|length }}</span>
+    </div>
+
+    {% if requests %}
+    <table class="table table-hover report-table">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Organization</th>
+                <th>Type</th>
+                <th>Details</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+            <tr>
+                <td><strong>#{{ request.req_id }}</strong></td>
+                <td>{{ request.source_org }}</td>
+                <td>{{ request.req_type.replace('_', ' ').title() }}</td>
+                <td class="text-truncate" style="max-width: 250px;">{{ request.req_details }}</td>
+                <td>{{ request.creation_date.strftime('%m/%d/%Y') if request.creation_date else 'N/A' }}</td>
+                <td>
+                    <span class="status-badge {{ 'status-open' if request.status|lower == 'open' else 'status-closed' }}">
+                        {{ request.status }}
+                    </span>
+                </td>
+                <td>
+                    <a href="{{ url_for('support.view_req_details', req_id=request.req_id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-5">
+        <p class="text-muted">You haven't submitted any support requests yet.</p>
+        <a href="{{ url_for('support.submit_req') }}" class="btn btn-outline-primary btn-sm">Submit New Request</a>
+    </div>
+    {% endif %}
 
 {% endblock %}

@@ -427,7 +427,7 @@ def delete_rule():
     #delete the rule
     db.session.delete(rule)
     db.session.commit()
-    return redirect(url_for("view_org_rules"))
+    return redirect(url_for("sponsor.view_org_rules"))
 
 
 @sponsor_bp.route("/sponsor/organization/rules/new_rule")
@@ -445,7 +445,7 @@ def submit_rule():
 
     db.session.add(new_rule)
     db.session.commit()
-    return redirect(url_for("view_org_rules"))
+    return redirect(url_for("sponsor.view_org_rules"))
 
 # Hardcoded catalog
 catalog_items = [

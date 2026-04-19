@@ -2,46 +2,77 @@
 
 {% block head %}
 <title>Organization Rules</title>
+<style>
+    .section-label {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    .text-success-custom { color: #27ae60; }
+    .text-danger-custom { color: #e74c3c; }
+    .rule-id { font-weight: 700; color: #a04000; }
+</style>
 {% endblock %}
 
 {% block body %}
-<h1>Organization Rules</h1>
-<p>View the rules that govern what your organization views as good or bad driving behaviors.</p>
-<br><p>Good Driving Behaviors</p>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rule</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in request1 %}
-        <tr>
-            <td>{{request.id}} </td>
-            <td>{{request.rule}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table><br>
 
+    <h2>Organization Rules</h2>
+    <p class="text-muted">View the rules that govern what your organization views as good or bad driving behaviors.</p>
 
-<br><p>bad Driving Behaviors</p>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Rule</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in request2 %}
-        <tr>
-            <td>{{request.id}} </td>
-            <td>{{request.rule}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table><br><br>
+    <div class="mt-4 mb-5">
+        <div class="section-label text-success-custom">
+            <i class="bi bi-check-circle-fill me-2"></i> Good Driving Behaviors
+        </div>
+        <table class="table table-hover report-table">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 150px;">ID</th>
+                    <th>Rule</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in request1 %}
+                <tr>
+                    <td class="rule-id">#{{ request.id }}</td>
+                    <td>{{ request.rule }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-muted">No positive behavior rules found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-{%endblock%}
+    <div class="mb-4">
+        <div class="section-label text-danger-custom">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Bad Driving Behaviors
+        </div>
+        <table class="table table-hover report-table">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 150px;">ID</th>
+                    <th>Rule</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in request2 %}
+                <tr>
+                    <td class="rule-id">#{{ request.id }}</td>
+                    <td>{{ request.rule }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-muted">No negative behavior rules found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}
