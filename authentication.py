@@ -106,23 +106,23 @@ def handle_driver_signup():
         # minimum 8 characters,no whitespaces,
         # 1 Uppercase, 1 lowercase, 1 number
         if (not password) or (not reenter_password):
-            return render_template("auth/forgotpassword.html", error="Password required")
+            return render_template("driver/driver_signup.html", error="Password required",companies=companies)
         
         if password != reenter_password:
-            return render_template("auth/forgotpassword.html", error="Passwords do not match")
+            return render_template("driver/driver_signup.html", error="Passwords do not match",companies=companies)
 
         if not get_password_strength(password):
-            return render_template("auth/forgotpassword.html", error="Password does not meet minimums")
+            return render_template("driver/driver_signup.html", error="Password does not meet minimums",companies=companies)
         
         #Email Checker
         #tba
         if Users.query.filter_by(email=email).first():
-            return render_template("driver/driver_signup.html", error="Email already registered")
+            return render_template("driver/driver_signup.html", error="Email already registered",companies=companies)
 
         #Sponsor Link
         company_ids = request.form.getlist('company_ids')
         if not company_ids:
-            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected")
+            return render_template("driver/driver_signup.html", error="Invalid sponsor company selected",companies=companies)
 
         try:
             new_driver = driver_create_signup(email=email,firstname=firstname,

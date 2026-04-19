@@ -16,6 +16,13 @@ admin_bp = Blueprint("admin",__name__,url_prefix="/admin")
 
 @admin_bp.before_request
 def restrict_to_admin():
+    # Allow end_impersonation to be called by non-admins (they hold a real_admin_id in session)
+    if request.endpoint == "admin.end_impersonation":
+        real_admin_id = session.get("real_admin_id")
+        if real_admin_id:
+            return None  # Let it through
+        abort(403)
+
     # User has to be logged in
     if not current_user.is_authenticated:
         flash("Please log in to access this page.", "warning")
@@ -116,6 +123,7 @@ def directory(role=None, company_id=None):
 
 @admin_bp.route("/profile-card/<int:user_id>", methods=["GET","POST"])
 def view_profilecard(user_id):
+    
     user = Users.query.get_or_404(user_id)
     
     # 2. Get all companies so we can show the "Apply" list
@@ -351,6 +359,60 @@ def bulk_upload():
         )
     return render_template("admin/admin_bulk_upload.html")
 
+
+## IMPERSONATE--------------------------
+## IMPERSONATE --------------------------
+
+@admin_bp.route("/impersonate/<int:user_id>", methods=["POST"])
+def impersonate_user(user_id):
+    target = Users.query.get_or_404(user_id)
+
+    if target.role == "admin":
+        flash("Cannot impersonate another admin.", "danger")
+        return redirect(url_for("admin.directory"))
+
+    # Store the real admin's ID in session before switching
+    session["impersonating_as"] = target.id
+    session["real_admin_id"] = current_user.id
+
+    '''
+    log_audit_event(
+        "impersonation_start",
+        user_id=current_user.id,
+        username=current_user.username,
+        details=f"Impersonating user: {target.username} (ID: {target.id})"
+    )
+    '''
+
+    login_user(target)
+    flash(f"You are now impersonating {target.username}. Click 'End Impersonation' to return.", "warning")
+    return redirect(url_for("dashboard"))
+
+
+@admin_bp.route("/impersonate/end", methods=["POST"])
+def end_impersonation():
+    real_admin_id = session.pop("real_admin_id", None)
+    session.pop("impersonating_as", None)
+
+    if not real_admin_id:
+        flash("No impersonation session found.", "danger")
+        return redirect(url_for("dashboard"))
+
+    real_admin = Users.query.get(real_admin_id)
+    if not real_admin or real_admin.role != "admin":
+        flash("Could not restore admin session.", "danger")
+        return redirect(url_for("auth.handle_login"))
+
+    log_audit_event(
+        "impersonation_end",
+        user_id=real_admin.id,
+        username=real_admin.username,
+        details=f"Ended impersonation of user ID: {session.get('impersonating_as', 'unknown')}"
+    )
+
+    login_user(real_admin)
+    flash("Impersonation ended. You are back as yourself.", "success")
+    return redirect(url_for("dashboard"))
 
 @admin_bp.route("/audit-log")
 def view_audit_log():

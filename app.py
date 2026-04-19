@@ -55,6 +55,7 @@ def load_user(user_id):
 def load_user_context():
     print(f"DEBUG: Current Endpoint is: {request.endpoint}")
     g.profile = None
+    g.is_impersonating = False
     # Guest Access pages - No profile needed
     public_endpoints = [
         "static",
@@ -73,6 +74,9 @@ def load_user_context():
     
     # If user is logged in, attach to the profile
     if current_user.is_authenticated:
+        if session.get("impersonating_as"):
+            g.is_impersonating = True
+
         if current_user.role == "driver":
             g.profile = current_user.driver_profile
         elif current_user.role == "sponsor":

@@ -83,3 +83,27 @@
         </div>
     </nav>
 </header>
+
+{% if g.is_impersonating %}
+<div style="
+    position: sticky; top: 0; z-index: 9999;
+    background: #f59e0b; color: #1a1a1a;
+    padding: 10px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: bold; font-size: 0.95rem;
+    border-bottom: 2px solid #d97706;
+">
+    <span>
+        🎭 Admin Impersonation Mode — viewing as 
+        <strong>{{ current_user.username }}</strong> ({{ current_user.role }})
+    </span>
+    <form action="{{ url_for('admin.end_impersonation') }}" method="POST" style="margin: 0;">
+        <button type="submit" style="
+            background: #1a1a1a; color: #f59e0b;
+            border: none; padding: 6px 16px;
+            border-radius: 4px; font-weight: bold;
+            cursor: pointer;
+        ">✖ End Impersonation</button>
+    </form>
+</div>
+{% endif %}

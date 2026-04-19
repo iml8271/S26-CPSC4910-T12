@@ -79,6 +79,11 @@
         {% elif profile.role == 'sponsor' %}
             <p>Company: {{ profile.sponsor_profile.company.name }}</p>
         {% endif %}
+        <form action="{{ url_for('admin.impersonate_user', user_id=profile.id) }}" method="POST">
+            <button type="submit" class="btn btn-warning">
+                🎭 Impersonate {{ profile.username }}
+            </button>
+        </form>
 
         <form action="{{ url_for('admin.delete_user', user_id=profile.id) }}" method="POST" 
             onsubmit="return confirm('⚠️ Are you sure? This will permanently delete {{ profile.firstname }} and all their data?');">
