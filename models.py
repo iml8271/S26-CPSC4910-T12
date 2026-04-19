@@ -388,7 +388,7 @@ class OrderStatus(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id'), nullable=False)
     order = db.relationship('Order', back_populates="status")
 
-    status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived","canceled"
+    status = db.Column(db.String(20), nullable=False) # "ordered","shipping","arrived"
     
     update_date = db.Column(db.DateTime, default=datetime.now, nullable=False)
 '''

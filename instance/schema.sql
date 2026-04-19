@@ -279,12 +279,14 @@ CREATE TABLE IF NOT EXISTS order_history (
 );
 
 CREATE TABLE IF NOT EXISTS order_status (
-    id          INT             NOT NULL AUTO_INCREMENT,
-    link_id     INT             NOT NULL,
-    order_id    INT             NOT NULL,
-    status      VARCHAR(20)     NOT NULL,
-    update_date DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id            INT           NOT NULL AUTO_INCREMENT,
+    link_id       INT           NOT NULL,
+    order_id      INT           NOT NULL,
+    status        VARCHAR(20)   NOT NULL DEFAULT 'ordered',
+    update_date   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    advance_after DATETIME      NULL,
     PRIMARY KEY (id),
+    CONSTRAINT valid_order_status CHECK (status IN ('ordered', 'shipping', 'arrived')),
     FOREIGN KEY (link_id)  REFERENCES driver_company_link (id) ON DELETE CASCADE,
     FOREIGN KEY (order_id) REFERENCES orders (order_id) ON DELETE CASCADE
 );
@@ -345,7 +347,8 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Trigger 5: Auto-create order_status row when a new order is placed
+-- Trigger 5: Auto-create order_status row when a new order is placed.
+--             advance_after is randomized between 1-3 days from now.
 DELIMITER $$
 CREATE TRIGGER after_order_insert
 AFTER INSERT ON orders
@@ -360,8 +363,14 @@ BEGIN
     LIMIT 1;
 
     IF v_link_id IS NOT NULL THEN
-        INSERT INTO order_status (link_id, order_id, status, update_date)
-        VALUES (v_link_id, NEW.order_id, 'ordered', NOW());
+        INSERT INTO order_status (link_id, order_id, status, update_date, advance_after)
+        VALUES (
+            v_link_id,
+            NEW.order_id,
+            'ordered',
+            NOW(),
+            NOW() + INTERVAL (1 + FLOOR(RAND() * 3)) DAY
+        );
     END IF;
 END$$
 DELIMITER ;
@@ -513,5 +522,33 @@ BEGIN
         status_reason = 'Auto-expired: no response within 30 days'
     WHERE status  = 'pending'
       AND app_date < (NOW() - INTERVAL 30 DAY);
+END$$
+DELIMITER ;
+
+
+-- Job 2: Advance order status automatically.
+--        ordered  -> shipping : after randomized 1-3 days
+--        shipping -> arrived  : after another randomized 1-3 days
+--        Runs every hour.
+DELIMITER $$
+CREATE EVENT advance_order_status
+ON SCHEDULE EVERY 1 HOUR
+DO
+BEGIN
+    -- Step 1: Advance 'ordered' -> 'shipping' where advance_after has passed
+    UPDATE order_status
+    SET status        = 'shipping',
+        update_date   = NOW(),
+        advance_after = NOW() + INTERVAL (1 + FLOOR(RAND() * 3)) DAY
+    WHERE status        = 'ordered'
+      AND advance_after <= NOW();
+
+    -- Step 2: Advance 'shipping' -> 'arrived' where advance_after has passed
+    UPDATE order_status
+    SET status        = 'arrived',
+        update_date   = NOW(),
+        advance_after = NULL
+    WHERE status        = 'shipping'
+      AND advance_after <= NOW();
 END$$
 DELIMITER ;
