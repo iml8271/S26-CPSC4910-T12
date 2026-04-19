@@ -442,7 +442,7 @@ def driver_create(
 
         # Create application record
         if company_id:
-                for c_id in company_id:
+            for c_id in company_id:
                 # Application Record
                 application = DriverApplications(
                     driver_profile = new_user.driver_profile,
