@@ -782,7 +782,7 @@ def place_order(id_driver):
         db.session.add(new_item)
 
     points_spent = data['total_points']
-    driver_link.current_points -= points_spent
+
 
     history_entry = DriverPointsHistory(
         link_id=driver_link.id,
