@@ -51,20 +51,20 @@ CREATE TABLE IF NOT EXISTS support_requests (
 );
 
 CREATE TABLE IF NOT EXISTS password_changes (
+    id          INT             NOT NULL AUTO_INCREMENT,
     user_id     INT             NOT NULL,
     date        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `change`      VARCHAR(250)    NOT NULL,
-    PRIMARY KEY (user_id),
-    UNIQUE (user_id),
+    PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS login_attempts (
+    id          INT             NOT NULL AUTO_INCREMENT,
     user_id     INT             NOT NULL,
     date        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status      VARCHAR(10)     NOT NULL,
-    PRIMARY KEY (user_id),
-    UNIQUE (user_id),
+    PRIMARY KEY (id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 

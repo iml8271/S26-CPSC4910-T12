@@ -190,167 +190,105 @@ def sponsor_remove_link(driver_id):
 @sponsor_bp.route("/driver_list/add", methods=["GET","POST"])
 def add_drivers():
     sponsor_profile = g.profile
-    
     company = sponsor_profile.company
     if not company:
         flash('No associated company found.', 'danger')
-        return redirect(request.url)
-    
-    
+        return redirect(url_for('sponsor.driver_list'))
+
+    error_log = []
+    success_count = 0
+    processed = False
+
     if request.method == "POST":
-        # Check if the key exists in the request
         if "bulk_upload_file" not in request.files:
-            flash("File part missing in the request.", "danger")
-            return redirect(request.url)
+            error_log.append("File part missing in the request.")
 
-        bulk_file = request.files["bulk_upload_file"]
+        else:
+            bulk_file = request.files["bulk_upload_file"]
 
-        # Check if user actually selected a file
-        if bulk_file.filename == "":
-            flash("No file selected.", "warning")
-            return redirect(request.url)
+            if bulk_file.filename == "":
+                error_log.append("No file selected.")
 
-        # Clean the filename and check the extension
-        filename = secure_filename(bulk_file.filename)
-        if not filename.lower().endswith('.txt'):
-            flash('Invalid file type. Only .txt files are permitted.', 'danger')
-            return redirect(request.url)
-    
-        try: 
-            
-            bulk_file.stream.seek(0)
+            elif not secure_filename(bulk_file.filename).lower().endswith('.txt'):
+                error_log.append("Invalid file type. Only .txt files are permitted.")
 
-            data_stream = (line.decode('utf-8').strip() for line in bulk_file.stream)
-            # Remove empty strings
-            valid_lines = (line for line in data_stream if line)
+            else:
+                try:
+                    bulk_file.stream.seek(0)
+                    data_stream = (line.decode('utf-8').strip() for line in bulk_file.stream)
+                    valid_lines = (line for line in data_stream if line)
+                    reader = csv.reader(valid_lines, delimiter='|', quoting=csv.QUOTE_NONE)
+                    processed = True
 
-            reader = csv.reader(
-                valid_lines,
-                delimiter='|',
-                quoting=csv.QUOTE_NONE,
-            )
-            print(f"DEBUG: Filename is {bulk_file.filename}")
+                    for line_num, row in enumerate(reader, start=1):
+                        row = [field.strip() for field in row]
 
-            error_log = []
-            success_count = 0
+                        if len(row) < 1:
+                            error_log.append(f"Line {line_num}: Empty line. Skipped.")
+                            continue
 
-            print("--- Starting File Processing ---")
-            for line_num, row in enumerate(reader, start=1):
-                print(f"DEBUG: Line {line_num} content: {row}")
-                # Cleaning
-                row = [field.strip() for field in row]
+                        user_type = row[0].upper()
 
-                # Field Count Validation
-                if len(row) < 5:
-                    print(f"DEBUG: Line {line_num} failed field count: {len(row)}")
-                    error_log.append(f"Line {line_num}: Too few fields (got {len(row)})")
-                    continue
+                        # Sponsors cannot use O type
+                        if user_type == "O":
+                            error_log.append(f"Line {line_num}: Sponsors cannot use 'O' type. Skipped.")
+                            continue
 
-                # Extraction
-                user_type = row[0].upper()
-                org_name  = row[1]
-                firstname = row[2]
-                lastname  = row[3]
-                email = row[4]
-                points_field = row[5] if len(row) > 5 else ''
-                reason = row[6] if len(row) > 6 else ''
+                        if user_type not in ("D", "S"):
+                            error_log.append(f"Line {line_num}: Invalid type '{user_type}' (must be D or S). Skipped.")
+                            continue
 
-                # Extraction Validation -----------------
-                if user_type not in ("D","S"):
-                    error_log.append(f"Line {line_num}: Invalid type (must be D or S). Skipped.")
-                    continue 
+                        if len(row) < 5:
+                            error_log.append(f"Line {line_num}: Too few fields (got {len(row)}). Skipped.")
+                            continue
 
-                if org_name:
-                    error_log.append(f"Line {line_num}: Must omit the organization name field. Continue.")
+                        org_name     = row[1]
+                        firstname    = row[2]
+                        lastname     = row[3]
+                        email        = row[4].lower()
+                        points_field = row[5].strip() if len(row) > 5 else ''
+                        reason_field = row[6].strip() if len(row) > 6 else ''
 
-                if not firstname or not lastname or not email:
-                    error_log.append(f"Line {line_num}: Missing personal info. Skipped.")
-                    continue
+                        # Points validation before calling helper
+                        points = None
+                        reason = None
+                        if points_field:
+                            try:
+                                points = int(points_field)
+                            except ValueError:
+                                error_log.append(f"Line {line_num}: Points value '{points_field}' is not a valid integer. Skipped.")
+                                continue
+                            if not reason_field:
+                                error_log.append(f"Line {line_num}: Points provided but reason is missing. Skipped.")
+                                continue
+                            reason = reason_field
 
-                # Search for User
-                user = Users.query.filter_by(email=email).first()
+                        prev_error_count = len(error_log)
 
-                # Add New Sponsor ---------------------
-                if user_type == "S":
-                    # Data Validation: optional fields
-                    if points_field or reason:
-                        error_log.append(f"Line {line_num}: Sponsors cannot have points. Continue.")
-                    
-                    # Case: User + Profile already exists
-                    if user:
-                        if user.driver_profile or user.admin_profile:
-                            error_log.append(f"Line {line_num}: User {email} exists for but is not sponsor. Skipped.")
-                        if user.sponsor_profile:
-                            error_log.append(f"Line {line_num}: Sponsor {email} already exists. Skipped.")
-                        continue
-
-                    # Case: User exists only
-                    try:
-                        sponsor_profile = SponsorProfile(
-                            firstname=firstname,
-                            lastname = lastname,
-                            company = company
-                        )
-                        db.session.add(sponsor_profile)
-                        db.session.commit()
-                        continue
-                    except Exception as e:
-                        error_log.append(f"Line {line_num}: Error creating sponsor: {str(e)}")
-                    # Case: No User & No Profile, new person
-                    try: 
-                        sponsor_create(
-                            email=email,
+                        error_log = bulk_line_upload(
+                            line_num, error_log,
+                            type=user_type,
+                            company_name=company.name,  # always use the sponsor's own company
                             firstname=firstname,
                             lastname=lastname,
-                            company_id=int(company.id)
-                        )
-                        success_count += 1
-                    except Exception as e:
-                        error_log.append(f"Line {line_num}: Error creating sponsor: {str(e)}")
-                    continue
-                # driver Spefici ---------------------
-                elif user_type == "D":
-                    if bool(points_field) != bool(reason):
-                        error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
-                        continue
-                    try:
-                        # Data Validation: in case of no data given
-                        points_field = int(points_field or 0)
-                        reason = (reason or "Bulk Upload")
-
-                        DriverService.sync_driver_relationship(
                             email=email,
-                            fname=firstname,
-                            lname=lastname,
-                            company_id=company.id,
-                            points=points_field,
-                            reason=reason,
-                            sponsor_id=current_user.id
+                            points=points,
+                            reason=reason
                         )
-                        success_count += 1
-                    except ValueError as ve:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Invalid data: {str(ve)}")
-                        continue
-                    except Exception as e:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Processing failed: {str(e)}")
-                        continue
-                else:      
-                    error_log.append(f"Line {line_num}: Invalid type '{user_type}'. Skipped.")
-                    continue
-        
-        except UnicodeDecodeError:
-            flash("Error reading file: Ensure it is saved in UTF-8 encoding.", "danger")
-            return redirect(request.url)
-        
-        return render_template(
-        "sponsor/sponsor_add_drivers.html", 
-        error_log=error_log, 
+
+                        # If no new errors were added, the line succeeded
+                        if len(error_log) == prev_error_count:
+                            success_count += 1
+
+                except UnicodeDecodeError:
+                    error_log.append("Error reading file: Ensure it is saved in UTF-8 encoding.")
+
+    return render_template(
+        "sponsor/sponsor_add_drivers.html",
+        error_log=error_log,
         success_count=success_count,
-        processed=True  # A flag to show the results div
-        )
-    return render_template("sponsor/sponsor_add_drivers.html")
+        processed=processed
+    )
 
 ## PENDING DRIVER_LIST ----------------------------------
 @sponsor_bp.route("/driver_list/applications/pending", methods=["GET","POST"])

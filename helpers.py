@@ -38,7 +38,146 @@ def validate_model(obj, model_name="Object"):
         db.session.add(obj)
     return obj
 
+## BULK UPLOAD
+# Bulk-Upload Driver
+
+# Validates Through a given line bfore redirecting it
+# Will return error if issue found
+def bulk_line_upload(line_num,error_log,type,company_name,firstname=None,lastname=None,email=None,points=None,reason=None):
+    # Validation
+    if not type or not company_name:
+        error_log.append(f"Line {line_num}: Missing fields. Skipped.")
+        return error_log
+    if type not in ("D","S","O"):
+        error_log.append(f"Line {line_num}: Invalid type (must be D,S,or O). Skipped.")
+        return error_log
+    
+    if type=="O":
+        company = SponsorCompany.query.filter_by(name=company_name).first()
+        if company:
+            error_log.append(f"Line {line_num}:Company {company_name} already exists. Skipped.")
+        else:
+            bulk_company(company_name)
+        return error_log
+        
+    if not firstname or not lastname or not email:
+        error_log.append(f"Line {line_num}: Missing fields. Skipped.")
+        return error_log
+    # validate company
+    company = SponsorCompany.query.filter_by(name=company_name).first()
+    if not company:
+        error_log.append(f"Line {line_num}:Company {company_name} cannot be found. Skipped.")
+        return error_log
+    # unqiue check user
+    core_user = Users.query.filter_by(email=email).first()
+    if core_user:
+        error_log.append(f"Line {line_num}:Email {email} in use. Skipped.")
+        return error_log
+    if type == "S":
+        if points or reason:
+            error_log.append(f"Line {line_num}:Point Fields were included. Ignored.")
+        bulk_sponsor(company.id,firstname=firstname,lastname=lastname,email=email)
+    elif type == "D":
+        if bool(points) != bool(reason):
+            error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
+        bulk_driver(company.id,firstname,lastname,email,points,reason)
+    return error_log
+
+def bulk_driver(company_id,firstname,lastname,email,points=0,reason="Bulk-Upload"):
+    try:
+        # DriverProfile
+        driver = Users.query.filter_by(email=email).first()
+        if not driver:    
+            driver = Users(
+                username=generate_unique_username(email),
+                #In professsional deployment, will swap with 2FA password emailed
+                password=generate_password_hash("Password1"),
+                email=email,
+                role="driver"
+            )
+            #Create DriverProfile
+            driver.driver_profile = DriverProfile(
+                firstname=firstname,
+                lastname=lastname,
+                is_active=True,
+            )
+            db.session.add(driver)
+            db.session.flush()
+            db.session.refresh(driver)
+            # Database auto creates DriverAlerts
+        # DriverCompany Link
+        link = DriverCompanyLink.query.filter_by(
+            driver_id=driver.id,company_id=company_id).first()
+        if (not link) or (not link.is_active):
+            app = DriverApplications(
+                user_id=driver.id,
+                company_id=company_id,
+                status="accepted",
+                status_reason="Bulk-Upload",
+                status_date=datetime.now()
+            )
+            db.session.add(app)
+            db.session.flush()
+            link = DriverCompanyLink.query.filter_by(
+                driver_id=driver.id,company_id=company_id).first()
+        # Update Points
+        base_points = DriverPointsHistory(
+            link_id = link.id,
+            points_change = points,
+            current_points = points,
+            update_date=datetime.now(),
+            reason = reason
+        )
+        db.session.add(base_points)
+        db.session.commit()
+        flash(f"Uploaded Driver {firstname}","success")
+    except Exception as e:
+        raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+
+def bulk_sponsor(company_id,firstname,lastname,email):
+    try:    
+        # SponsorProfile
+        sponsor = Users.query.filter_by(email=email).first()
+        if not sponsor:    
+            sponsor = Users(
+                username=generate_unique_username(email),
+                #In professsional deployment, will swap with 2FA password emailed
+                password=generate_password_hash("Password1"),
+                email=email,
+                role="sponsor"
+            )
+            #Create DriverProfile
+            sponsor.sponsor_profile = SponsorProfile(
+                firstname=firstname,
+                lastname=lastname,
+                company_id=company_id
+            )
+            db.session.add(sponsor)
+            db.session.commit()
+    except Exception as e:
+        raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+
+def bulk_company(company_name):
+    try:
+        company = SponsorCompany(
+            name = company_name
+        )
+        db.session.add(company)
+        db.session.commit()
+    except Exception as e:
+        raise RuntimeError(f"Failed to create driver: {str(e)}") from e
+
+
 # DRIVER ------------------
+
+
+
+
+
+
+
+
+
 #trusts everything has been checked
 def driver_create_profile(email,firstname,lastname,username,password)->Users:
     hashed_password = generate_password_hash(password,method="pbkdf2:sha256") if password else None
@@ -303,7 +442,7 @@ def driver_create(
 
         # Create application record
         if company_id:
-            for c_id in company_id:
+                for c_id in company_id:
                 # Application Record
                 application = DriverApplications(
                     driver_profile = new_user.driver_profile,

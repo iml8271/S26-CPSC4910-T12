@@ -271,154 +271,95 @@ def bulk_upload():
                 # Cleaning
                 row = [field.strip() for field in row]
 
-                # Field Count Validation
-                if len(row) < 2:
-                    print(f"DEBUG: Line {line_num} failed field count: {len(row)}")
-                    error_log.append(f"Line {line_num}: Too few fields (got {len(row)})")
+                # Need at least type field
+                if len(row) < 1:
+                    error_log.append(f"Line {line_num}: Empty line. Skipped.")
                     continue
 
-                # Extraction
                 user_type = row[0].upper()
-                org_name  = row[1].strip()
 
-                # Extraction Validation -----------------
-                if user_type not in ("D","S","O"):
-                    error_log.append(f"Line {line_num}: Invalid type (must be D,S,or O). Skipped.")
-                    continue 
-
-                if not org_name:
-                    error_log.append(f"Line {line_num}: Must contain organization name field. Continue.")
+                # Validate type early
+                if user_type not in ("D", "S", "O"):
+                    error_log.append(f"Line {line_num}: Invalid type '{row[0]}'. Must be D, S, or O. Skipped.")
                     continue
 
-                company = SponsorCompany.query.filter(SponsorCompany.name.ilike(org_name)).first()
-
-                # ORGANIZATION ----------------------
+                # O type only needs the org name
                 if user_type == "O":
-                    # Field Count Validation
-                    if len(row) < 2:
-                        print(f"DEBUG: Line {line_num} failed field count: {len(row)}")
-                        error_log.append(f"Line {line_num}: Too few fields (got {len(row)})")
-                        continue   
-                    '''
-                    # Data Validation: no other fields
-                    if firstname or lastname or email or points_field or reason:
-                        error_log.append(f"Line {line_num}: New Organzation cannot continue other information. Skipped.")
+                    if len(row) < 2 or not row[1]:
+                        error_log.append(f"Line {line_num}: O type missing organization name. Skipped.")
                         continue
-                    '''
-                    if company:
-                        error_log.append(f"Line {line_num}: '{org_name}' already exists. Skipped.")
-                        continue
-                    #if company already exists, exit line
-                    try: 
-                        # Add Organization
-                        new_org = SponsorCompany(name=org_name,
-                                                 email=None,
-                                                 phone=None)
-                        db.session.add(new_org)
-                        db.session.commit()
-                    except Exception as e:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Error creating org: {str(e)}")
+                    org_name = row[1]
+                    error_log = bulk_line_upload(
+                        line_num, error_log,
+                        type=user_type,
+                        company_name=org_name
+                    )
+                    continue
+                # D and S types need at least 5 fields (type, org, first, last, email)
+                if len(row) < 5:
+                    error_log.append(f"Line {line_num}: Too few fields (got {len(row)}). Skipped.")
                     continue
 
-                # Data Validation
+                org_name  = row[1]  # may be empty string for sponsor uploads
                 firstname = row[2]
                 lastname  = row[3]
-                email = row[4].lower()
-                points_field = row[5] if len(row) > 5 else ''
-                reason = row[6] if len(row) > 6 else ''
-                # Field Count Validation
-                if len(row) < 5:
-                    print(f"DEBUG: Line {line_num} failed field count: {len(row)}")
-                    error_log.append(f"Line {line_num}: Too few fields (got {len(row)})")
-                    continue
-                
-                if not company:
-                    error_log.append(f"Line {line_num}: '{org_name}' does not exist. Skipped.")
-                    continue
+                email     = row[4].lower()
 
-                if not firstname or not lastname or not email:
-                    error_log.append(f"Line {line_num}: Missing personal info. Skipped.")
-                    continue
+                # Points and reason are optional
+                points_field = row[5].strip() if len(row) > 5 else ''
+                reason_field = row[6].strip() if len(row) > 6 else ''
 
-                # Search for User
-                user = Users.query.filter_by(email=email).first()
-
-                # Add New Sponsor ---------------------
-                if user_type == "S":
-                    # Data Validation: optional fields
-                    if points_field or reason:
-                        error_log.append(f"Line {line_num}: Sponsors cannot have points. Continue.")
-                    
-                    # Case: User + Profile already exists
-                    if user:
-                        if user.driver_profile or user.admin_profile:
-                            error_log.append(f"Line {line_num}: User {email} exists for but is not sponsor. Skipped.")
-                        if user.sponsor_profile:
-                            error_log.append(f"Line {line_num}: Sponsor {email} already exists. Skipped.")
-                        continue
-
-                    # Case: User exists only
+                # Validate points if present
+                points = None
+                reason = None
+                if points_field:
                     try:
-                        sponsor_profile = SponsorProfile(
-                            firstname=firstname,
-                            lastname = lastname,
-                            company = company
-                        )
-                        db.session.add(sponsor_profile)
-                        db.session.commit()
+                        points = int(points_field)
+                    except ValueError:
+                        error_log.append(f"Line {line_num}: Points value '{points_field}' is not a valid integer. Skipped.")
                         continue
-                    except Exception as e:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Error creating sponsor: {str(e)}")
-                    # Case: No User & No Profile, new person
-                    try: 
-                        sponsor_create(
-                            email=email,
-                            firstname=firstname,
-                            lastname=lastname,
-                            company_id=int(company.id)
-                        )
-                        success_count += 1
-                    except Exception as e:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Error creating sponsor: {str(e)}")
-                    continue
-                # driver Spefici ---------------------
-                elif user_type == "D":
-                    if bool(points_field) != bool(reason):
-                        error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
+                    if not reason_field:
+                        error_log.append(f"Line {line_num}: Points provided but reason is missing. Skipped.")
                         continue
-                    try:
-                        # Data Validation: in case of no data given
-                        points_field = int(points_field or 0)
-                        reason = (reason or "Bulk Upload")
+                    reason = reason_field
 
-                        DriverService.sync_driver_relationship(
-                            email=email,
-                            fname=firstname,
-                            lname=lastname,
-                            company_id=company.id,
-                            points=points_field,
-                            reason=reason,
-                            sponsor_id=current_user.id
-                        )
-                        success_count += 1
-                    except ValueError as ve:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Invalid data: {str(ve)}")
-                        continue
-                    except Exception as e:
-                        db.session.rollback()
-                        error_log.append(f"Line {line_num}: Processing failed: {str(e)}")
-                        continue
-                else:      
-                    error_log.append(f"Line {line_num}: Invalid type '{user_type}'. Skipped.")
-                    continue
-        
+                error_log = bulk_line_upload(
+                    line_num, error_log,
+                    type=user_type,
+                    company_name=org_name,
+                    firstname=firstname,
+                    lastname=lastname,
+                    email=email,
+                    points=points,
+                    reason=reason
+                )
+                if error_log:
+                    for err in error_log:
+                        flash(err, "warning")
+                flash(f"Bulk upload complete.", "success")
+                return render_template(
+                    "admin/admin_bulk_upload.html", 
+                    error_log=error_log, 
+                    success_count=success_count,
+                    processed=True  # A flag to show the results div
+                    )
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
+            return render_template(
+                "admin/admin_bulk_upload.html", 
+                error_log=error_log, 
+                success_count=success_count,
+                processed=True  # A flag to show the results div
+                )
         except UnicodeDecodeError:
             flash("Error reading file: Ensure it is saved in UTF-8 encoding.", "danger")
-            return redirect(request.url)
+            return render_template(
+                "admin/admin_bulk_upload.html", 
+                error_log=error_log, 
+                success_count=success_count,
+                processed=True  # A flag to show the results div
+                )
         
         return render_template(
         "admin/admin_bulk_upload.html", 
