@@ -64,10 +64,11 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('sponsor.sponsor_settings') }}">Settings</a>
                             </li>
-                        {% endif %}
-                        <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('admin.admin_settings') }}">Settings</a>
-                        </li>
+                        {% elif current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                    <a class="nav-link" href="{{ url_for('admin.admin_settings') }}">Settings</a>
+                            </li>
+                        {% endif%}
                         <li class="nav-item">
                             <a class="nav-link logout-link" href="{{ url_for('auth.handle_logout') }}">Logout</a>
                         </li>
