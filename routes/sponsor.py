@@ -703,10 +703,12 @@ def current_catalog():
 
     return render_template("sponsor/sponsor_catalog.html", items=items)
 
-@sponsor_bp.route('/remove_from_catalog', methods=['GET', 'POST'])
-def remove_from_catalog():
-
-    redirect(url_for('current_catalog'))
+@sponsor_bp.route('/remove_from_catalog,<int:target>', methods=['GET', 'POST'])
+def remove_from_catalog(target):
+    item = SponsorCatalog.query.get(target)
+    item.is_active = False
+    db.session.commit()
+    return redirect(url_for('sponsor.current_catalog'))
 
 @sponsor_bp.route('/sponsor_driver_cat/<int:id_driver>', methods=['GET'])
 def sponsor_driver_catalog(id_driver):

@@ -80,7 +80,7 @@
                                         </div>
                                     </div>
 
-                                    <form action="{{ url_for('sponsor.remove_from_catalog', item_id=db_item.id) }}" method="POST">
+                                    <form action="{{ url_for('sponsor.remove_from_catalog', target=db_item.id) }}" method="POST">
                                         <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
                                             Remove
                                         </button>
