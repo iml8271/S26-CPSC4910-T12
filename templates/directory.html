@@ -23,6 +23,7 @@
     }
     .driver-accent { border-top: 5px solid #64b5f6; } /* Soft Blue */
     .sponsor-accent { border-top: 5px solid #ffb74d; } /* Soft Orange */
+    .admin-accent { border-top: 5px solid #9c2d1b; }
     
     .info-label { color: #9e9e9e; font-size: 0.75rem; margin-bottom: 2px; }
     .info-value { color: #424242; font-size: 0.9rem; font-weight: 600; }
@@ -42,13 +43,19 @@
     <div class="row g-4">
         {% for user in users %}
         <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="user-card h-100 p-4 shadow-sm {% if user.role == 'driver' %}driver-accent{% else %}sponsor-accent{% endif %}">
+            <div class="user-card h-100 p-4 shadow-sm {% if user.role == 'driver' %}driver-accent{% elif user.role == 'sponsor' %}sponsor-accent{% else %}admin-accent{% endif %}">
                 
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <span class="role-label rounded-pill {% if user.role == 'driver' %}bg-light text-primary{% else %}bg-light text-warning{% endif %}">
-                        {{ user.role }}
+                    <span class="role-label rounded-pill bg-light 
+                        {% if user.role == 'driver' %}
+                            text-primary
+                        {% elif user.role == 'sponsor' %}
+                            text-warning
+                        {% else %}
+                            text-danger
+                        {% endif %}">
+                        {{ user.role | capitalize }}
                     </span>
-                    <small class="text-muted" style="font-family: monospace;">ID#{{ user.id }}</small>
                 </div>
 
                 <div class="mb-4">
@@ -60,10 +67,11 @@
                         {% elif user.role == 'admin' %}
                             {{ user.admin_profile.firstname }} {{ user.admin_profile.lastname }}
                          {% endif %}
-</h5>
+                    </h5>
                     <div class="text-muted small text-truncate">{{ user.email }}</div>
                 </div>
 
+                {% if not user.role == 'admin' %}
                 <div class="mb-4 pt-3 border-top">
                     <div class="info-label text-uppercase">
                         {% if user.role == 'sponsor'%}
@@ -81,7 +89,7 @@
                         {% endif %}
                     </div>
                 </div>
-
+                {% endif %}
                 <a href="{{ url_for('admin.view_profilecard', user_id=user.id) }}" 
                     class="btn btn-dark w-100 rounded-pill py-2 shadow-sm">
                     Manage Profile

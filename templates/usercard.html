@@ -110,12 +110,14 @@
             <p>Company: {{ profile.sponsor_profile.company.name }}</p>
         {% endif %}
         <div class="d-flex flex-column flex-md-row gap-2 mt-3">
+            {% if not profile.role == 'admin' %}
             <form action="{{ url_for('admin.impersonate_user', user_id=profile.id) }}" method="POST" class="m-0 flex-grow-1">
                 <button type="submit" class="btn btn-sm rounded-pill px-4 w-100" 
                         style="background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; font-weight: 600; min-height: 38px;">
                     Impersonate
                 </button>
             </form>
+            {% endif %}
 
             <form action="{{ url_for('admin.delete_user', user_id=profile.id) }}" method="POST" 
                 onsubmit="return confirm('⚠️ Are you sure? This will permanently delete {{ profile.firstname }}?');" 

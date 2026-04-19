@@ -82,18 +82,18 @@ def master_signup():
                 firstname = request.form.get("firstname").strip()
                 lastname = request.form.get("lastname").strip()
                 email = request.form.get("email").strip()
-                password = request.form.get("password").strip()
+                #password = request.form.get("password").strip()
 
                 if role == "admin":
                     admin_create(email=email,firstname=firstname,
-                        lastname=lastname,password=password)
+                        lastname=lastname,password="Password1")
                 elif role == "sponsor":
                     company_id = request.form.get("company_id")
                     sponsor_create(email=email,firstname=firstname,lastname=lastname,
-                        password=password,company_id=company_id)
+                        password="Password1",company_id=company_id)
                 elif role == "driver":
                     driver_create_profile(email=email,firstname=firstname,lastname=lastname,
-                        username=generate_unique_username(email),password=password)
+                        username=generate_unique_username(email),password="Password1")
                 db.session.commit()
                 log_audit_event("account_created", user_id=current_user.id, username=current_user.username,
                                 details=f"Admin created {role}: {email}")
@@ -117,6 +117,7 @@ def all_companies_list():
 @admin_bp.route("/directory", methods=["GET", "POST"])
 @admin_bp.route("/directory/<role>/<int:company_id>", methods=["GET", "POST"])
 def directory(role=None, company_id=None):
+    '''
     query = Users.query.filter(or_(Users.role == "driver", Users.role == "sponsor"))
     if role and role != "all":
         query.filter_by(role=role)
@@ -138,6 +139,9 @@ def directory(role=None, company_id=None):
                            companies=companies, 
                            current_role=role, 
                            current_company=company_id)
+    '''
+    all_users = Users.query.all()
+    return render_template('directory.html',users=all_users)
 
 @admin_bp.route("/profile-card/<int:user_id>", methods=["GET","POST"])
 def view_profilecard(user_id):

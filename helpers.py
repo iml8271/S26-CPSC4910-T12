@@ -966,10 +966,12 @@ def admin_create(
         raise ValueError(f"Email {email} is already registered")
 
     # Username handling
+    username = username or generate_unique_username(email)
     if username and Users.query.filter_by(username=username).first():
         raise ValueError(f"Username {username} is already taken")
 
     # Password handling
+    password= password or "Password1"
     hashed_password = generate_password_hash(password,method="pbkdf2:sha256") if password else None
 
     try:
