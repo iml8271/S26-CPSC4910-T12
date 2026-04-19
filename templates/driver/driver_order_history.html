@@ -81,17 +81,17 @@
                             {% set s = order.status | lower %}
                             <div class="status-line" aria-label="Current status: {{ s }}">
                                 
-                                <div class="status-step {{ 'step-active' if s in ['ordered', 'shipping', 'arrived', 'completed'] }}">
+                                <div class="status-step {{ 'step-active' if s in ['ordered', 'shipping', 'arrived'] }}">
                                     <div class="status-dot"></div>
                                     <div class="status-text">Placed</div>
                                 </div>
 
-                                <div class="status-step {{ 'step-active' if s in ['shipping', 'arrived', 'completed'] }}">
+                                <div class="status-step {{ 'step-active' if s in ['shipping', 'arrived'] }}">
                                     <div class="status-dot"></div>
                                     <div class="status-text">Shipped</div>
                                 </div>
 
-                                <div class="status-step {{ 'step-active' if s in ['arrived', 'completed'] }}">
+                                <div class="status-step {{ 'step-active' if s in ['arrived'] }}">
                                     <div class="status-dot"></div>
                                     <div class="status-text">Arrived</div>
                                 </div>
