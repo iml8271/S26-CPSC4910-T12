@@ -125,9 +125,11 @@ def driver_update_address(driver_id,streetname,city,zipcode):
 # requires an active link
 def driver_change_points(driver_id,company_id,points,sponsor_id,reason="New Link"):
     try:
+        print(f"DEBUG: driver_id={driver_id}, company_id={company_id}, points={points}")
         link = DriverCompanyLink.query.filter_by(
             driver_id=driver_id,
             company_id=company_id).first()
+        print(f"DEBUG: link found = {link}")
         if not link:
             raise ValueError("No relation to company found")
 
@@ -206,7 +208,34 @@ def driver_create_bulk(email,firstname,lastname,company_id,points,points_reason)
         db.session.rollback()
         raise RuntimeError(f"Failed to change application: {str(e)}") from e
 
+def remove_link(link_id,remover_id):
+    try:
+        link = DriverCompanyLink.query.filter_by(
+            id=link_id).first()
+        if not link:
+            raise ValueError(f"Link is not found")
+        if not link.is_active:
+            return link
+        
+        link.is_active = False
+        link.status_date = datetime.now()
+        db.session.add(link)
 
+        # Add Final Points Record
+        closeout_record = DriverPointsHistory(
+            link = link,
+            points_change = 0,
+            current_points = link.current_points,
+            reason = "Link Ended",
+            sponsor_user_id = remover_id
+        )
+        db.session.add(closeout_record)
+
+        db.session.commit()
+
+    except Exception as e:
+        db.session.rollback()
+        raise RuntimeError(f"Failed to remove driver from company: {str(e)}") from e
 
 
 

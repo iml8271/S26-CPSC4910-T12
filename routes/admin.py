@@ -359,6 +359,31 @@ def bulk_upload():
         )
     return render_template("admin/admin_bulk_upload.html")
 
+@admin_bp.route("/remove_link/<int:link_id>", methods=["POST"])
+def admin_remove_link(link_id):
+    remove_link(link_id=link_id,remover_id=g.profile.user_id)
+    return redirect(request.referrer or url_for('admin.directory'))
+
+@admin_bp.route("/update_points/<int:driver_id>", methods=["POST"])
+def update_points(driver_id):
+    try:
+        admin_profile = g.profile
+        points = request.form.get("points",0)
+        reason = request.form.get("reason", "Processed by Sponsor")
+        company_id = request.form.get("company_id")
+        driver_change_points(driver_id=driver_id,
+            company_id=int(company_id),
+            points=int(points),
+            sponsor_id=admin_profile.user.id,
+            reason=reason)
+        db.session.commit()
+        flash("Points updated successfully!", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating points: {str(e)}", "danger")
+        
+    return redirect(request.referrer or url_for('admin.directory'))
 
 ## IMPERSONATE--------------------------
 ## IMPERSONATE --------------------------
