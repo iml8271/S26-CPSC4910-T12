@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, make_response
 from flask_login import login_required, current_user
 from models import db, Invoice, InvoiceItem, SponsorCompany, DriverCompanyLink, DriverPointsHistory, DriverProfile
 from datetime import datetime
 from functools import wraps
 from decimal import Decimal
+from xhtml2pdf import pisa
+import io
+from collections import defaultdict
 
 
 invoice_bp = Blueprint('invoice', __name__)
@@ -138,3 +141,41 @@ def invoice_delete(invoice_id):
     db.session.commit()
     flash("Invoice deleted.", "info")
     return redirect(url_for("invoice.invoice_list"))
+
+
+#printing invoices
+@invoice_bp.route("/admin/invoices/<int:invoice_id>/download")
+@admin_required
+def invoice_download(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+
+    driver_totals = defaultdict(lambda: {"name": "", "points": 0, "amount": Decimal("0.00"), "fee": Decimal("0.00")})
+
+    for item in invoice.items:
+        driver_id = item.driver_id
+        driver_totals[driver_id]["name"] = f"{item.driver.firstname} {item.driver.lastname}"
+        driver_totals[driver_id]["points"] += item.points
+        driver_totals[driver_id]["amount"] += item.amount
+
+    for driver_id in driver_totals:
+        driver_totals[driver_id]["fee"] = round(driver_totals[driver_id]["amount"] * Decimal("0.01"), 2)
+
+    fee_amount = round(invoice.total_amount * Decimal("0.01"), 2)
+    total_with_fee = round(invoice.total_amount + fee_amount, 2)
+
+    html_content = render_template(
+        "admin/reports/admin_invoice_pdf.html",
+        invoice=invoice,
+        fee_amount=fee_amount,
+        total_with_fee=total_with_fee,
+        driver_totals=driver_totals
+    )
+
+    pdf_buffer = io.BytesIO()
+    pisa.CreatePDF(html_content, dest=pdf_buffer)
+    pdf = pdf_buffer.getvalue()
+
+    response = make_response(pdf)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename=invoice_{invoice.id}_{invoice.company.name}.pdf"
+    return response

@@ -6,10 +6,15 @@
  
 {% block body %}
  
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Invoice #{{ invoice.id }}</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Invoice #{{ invoice.id }}</h2>
+    <div>
+        <a href="{{ url_for('invoice.invoice_download', invoice_id=invoice.id) }}" class="btn btn-success me-2">
+            Download PDF
+        </a>
         <a href="{{ url_for('invoice.invoice_list') }}" class="btn btn-secondary">Back to Invoices</a>
     </div>
+</div>
  
     <!-- Invoice Summary -->
     <table class="table table-bordered mb-4" style="max-width: 500px;">
