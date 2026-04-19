@@ -45,10 +45,16 @@ def driver_report():
 @report_bp.route("/reports/points", methods=["GET"])
 @login_required
 def points_report():
-    request = db.session.query(DriverPointsHistory) \
-        .join(DriverCompanyLink) \
-        .join(DriverProfile) \
-        .all()
+    if (current_user.role == "admin"):
+        request = db.session.query(DriverPointsHistory) \
+            .join(DriverCompanyLink) \
+            .join(DriverProfile) \
+            .all()
+    else:
+        request = db.session.query(DriverPointsHistory) \
+            .join(DriverCompanyLink) \
+            .join(DriverProfile) \
+            .filter(DriverCompanyLink.company_id == current_user.sponsor_profile.company_id).all()
 
     return render_template("admin/reports/admin_points_report.html", history=request)
 
@@ -66,7 +72,7 @@ def points_report_specific():
     history = db.session.query(DriverPointsHistory) \
         .join(DriverCompanyLink) \
         .join(DriverProfile) \
-        .filter(DriverProfile.user_id == target).all()  # Use .filter() for specific column matching
+        .filter(DriverProfile.user_id == target).all()
 
     return render_template("admin/reports/admin_points_report.html", history=history)
 
