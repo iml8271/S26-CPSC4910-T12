@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>Sponsor - Driver Audit Log</title>
+<style>
+    .btn-primary, .pagination .page-item.active .page-link {
+        background-color: #d35400 !important;
+        border-color: #a04000 !important;
+    }
+    .text-primary, .page-link {
+        color: #d35400 !important;
+    }
+    .page-link:hover {
+        background-color: #fff5ed !important;
+    }
+    .event-badge {
+        background-color: #fdebd0;
+        color: #a04000;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <h2>Driver Audit Log</h2>
+        <span class="text-muted small">
+            Showing <strong>{{ logs|length }}</strong> of <strong>{{ pagination.total }}</strong> entries
+        </span>
+    </div>
+
+    <div class="alert alert-info py-2 small">
+        <i class="bi bi-info-circle"></i>
+        Showing activity only for drivers in your organization.
+    </div>
+
+    <div class="card mb-4 border-light shadow-sm">
+        <div class="card-body bg-light">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-uppercase">Event Type</label>
+                    <select name="event_type" class="form-select form-select-sm">
+                        <option value="">All Events</option>
+                        {% for et in event_types %}
+                        <option value="{{ et }}" {% if current_filter == et %}selected{% endif %}>
+                            {{ et.replace('_', ' ').title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase">From Date</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase">To Date</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-primary px-4">Apply Filters</button>
+                    <a href="{{ url_for('sponsor.sponsor_audit_log') }}" class="btn btn-sm btn-link text-muted text-decoration-none">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if logs %}
+    <table class="table table-hover report-table">
+        <thead class="table-dark">
+            <tr>
+                <th>Timestamp</th>
+                <th>Event</th>
+                <th>Driver</th>
+                <th>IP Address</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>
+                    <div class="fw-bold">{{ log.timestamp.strftime('%m/%d/%Y') }}</div>
+                    <small class="text-muted">{{ log.timestamp.strftime('%I:%M:%S %p') }}</small>
+                </td>
+                <td><span class="event-badge">{{ log.event_type.replace('_', ' ').title() }}</span></td>
+                <td><strong>{{ log.username or '—' }}</strong></td>
+                <td><code class="text-muted small">{{ log.ip_address or '—' }}</code></td>
+                <td class="small text-secondary">{{ log.details or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Audit log pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.prev_num }}&event_type={{ current_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Previous</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link text-dark">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            </li>
+
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.next_num }}&event_type={{ current_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <p class="text-muted text-center py-5">No audit entries match your criteria.</p>
+    {% endif %}
+
+{% endblock %}

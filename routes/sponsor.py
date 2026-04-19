@@ -11,6 +11,7 @@ from helpers import *
 import os
 import requests
 from sqlalchemy import func
+from models import AuditLog, DriverCompanyLink
 
 sponsor_bp = Blueprint("sponsor",__name__,url_prefix="/sponsor")
 
@@ -796,3 +797,60 @@ def place_order(id_driver):
 
     db.session.commit()
     return jsonify({"status": "success", "order_id": new_order.order_id})
+
+
+@sponsor_bp.route("/audit_log", methods=["GET"])
+def sponsor_audit_log():
+    sponsor = g.profile
+    company_id = sponsor.company_id
+
+    # Driver user_ids linked to this company
+    linked_driver_ids = db.session.query(DriverCompanyLink.driver_id).filter_by(
+        company_id=company_id
+    ).join(Users, Users.id == DriverCompanyLink.driver_id).filter(
+        Users.role == "driver"
+    ).all()
+    linked_driver_ids = [r[0] for r in linked_driver_ids]
+
+    # Sponsor user_ids for this company
+    linked_sponsor_ids = db.session.query(SponsorProfile.user_id).filter_by(
+        company_id=company_id
+    ).all()
+    linked_sponsor_ids = [r[0] for r in linked_sponsor_ids]
+
+    # Combine both lists
+    all_linked_ids = linked_driver_ids + linked_sponsor_ids
+
+    # Filter parameters
+    event_type = request.args.get("event_type", "")
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+    page = request.args.get("page", 1, type=int)
+
+    query = AuditLog.query.filter(AuditLog.user_id.in_(all_linked_ids))
+
+    if event_type:
+        query = query.filter(AuditLog.event_type == event_type)
+    if date_from:
+        query = query.filter(AuditLog.timestamp >= datetime.strptime(date_from, "%Y-%m-%d"))
+    if date_to:
+        query = query.filter(AuditLog.timestamp <= datetime.strptime(date_to, "%Y-%m-%d"))
+
+    query = query.order_by(AuditLog.timestamp.desc())
+    pagination = query.paginate(page=page, per_page=25, error_out=False)
+    logs = pagination.items
+
+    event_types = db.session.query(AuditLog.event_type.distinct()).filter(
+        AuditLog.user_id.in_(all_linked_ids)
+    ).all()
+    event_types = [et[0] for et in event_types]
+
+    return render_template(
+        "sponsor/sponsor_audit_log.html",
+        logs=logs,
+        pagination=pagination,
+        event_types=event_types,
+        current_filter=event_type,
+        date_from=date_from,
+        date_to=date_to
+    )
