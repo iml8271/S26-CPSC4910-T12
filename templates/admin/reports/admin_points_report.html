@@ -30,7 +30,7 @@
             <tr>
                 <td>#{{ entry.link.driver_profile.user_id }}</td>
                 <td><strong>{{ entry.link.driver_profile.firstname }} {{ entry.link.driver_profile.lastname }}</strong></td>
-                <td>{{ entry.link.company.company_name }}</td>
+                <td>{{ entry.link.company.name }}</td>
                 <td>{{ entry.update_date.strftime('%m/%d/%Y') }} <small class="text-muted">{{ entry.update_date.strftime('%I:%M %p') }}</small></td>
                 <td>{{ entry.reason }}</td>
                 <td class="text-end">
