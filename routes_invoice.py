@@ -3,6 +3,8 @@ from flask_login import login_required, current_user
 from models import db, Invoice, InvoiceItem, SponsorCompany, DriverCompanyLink, DriverPointsHistory, DriverProfile
 from datetime import datetime
 from functools import wraps
+from decimal import Decimal
+
 
 invoice_bp = Blueprint('invoice', __name__)
 
@@ -20,11 +22,16 @@ def admin_required(fn):
     return decorated
 
 
-# ---- Invoice List ----
+
 @invoice_bp.route("/admin/invoices")
 @admin_required
 def invoice_list():
     invoices = Invoice.query.order_by(Invoice.created_date.desc()).all()
+
+    for invoice in invoices:
+        invoice.fee_amount = round(invoice.total_amount * Decimal('0.01'), 2)
+        invoice.total_with_fee = round(invoice.total_amount + invoice.fee_amount, 2)
+
     return render_template("admin/reports/admin_invoices.html", invoices=invoices)
 
 
@@ -106,12 +113,20 @@ def invoice_create():
     return redirect(url_for("invoice.invoice_view", invoice_id=invoice.id))
 
 
-# ---- View Single Invoice ----
 @invoice_bp.route("/admin/invoices/<int:invoice_id>")
 @admin_required
 def invoice_view(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    return render_template("admin/reports/admin_invoice_view.html", invoice=invoice)
+
+    fee_amount = round(invoice.total_amount * Decimal('0.01'), 2)
+    total_with_fee = round(invoice.total_amount + fee_amount, 2)
+
+    return render_template(
+        "admin/reports/admin_invoice_view.html",
+        invoice=invoice,
+        fee_amount=fee_amount,
+        total_with_fee=total_with_fee
+    )
 
 
 # ---- Delete Invoice ----

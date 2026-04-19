@@ -21,6 +21,7 @@
                 <th>Date Range</th>
                 <th class="text-end">Total Points</th>
                 <th class="text-end">Total Amount</th>
+                <th class="text-end">Total Due (including Fee)</th>
                 <th>Created</th>
                 <th>Actions</th>
             </tr>
@@ -33,6 +34,7 @@
                 <td>{{ invoice.start_date.strftime('%m/%d/%Y') }} - {{ invoice.end_date.strftime('%m/%d/%Y') }}</td>
                 <td class="text-end">{{ invoice.total_points }}</td>
                 <td class="text-end">${{ "%.2f"|format(invoice.total_amount) }}</td>
+                <td class="text-end">${{ "%.2f"|format(invoice.total_with_fee) }}</td>
                 <td>{{ invoice.created_date.strftime('%m/%d/%Y') }}</td>
                 <td>
                     <a href="{{ url_for('invoice.invoice_view', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-primary">View</a>

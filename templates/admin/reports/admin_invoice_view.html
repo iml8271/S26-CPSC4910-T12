@@ -31,6 +31,14 @@
                 <td>${{ "%.2f"|format(invoice.total_amount) }}</td>
             </tr>
             <tr>
+                <th class="table-dark">Service Fee (1%)</th>
+                <td>${{ "%.2f"|format(fee_amount) }}</td>
+            </tr>
+            <tr>
+                <th class="table-dark">Total Due</th>
+                <td><strong>${{ "%.2f"|format(total_with_fee) }}</strong></td>
+            </tr>
+            <tr>
                 <th class="table-dark">Created By</th>
                 <td>{{ invoice.created_by_admin.firstname }} {{ invoice.created_by_admin.lastname }}</td>
             </tr>
@@ -72,13 +80,21 @@
             </tr>
             {% endfor %}
         </tbody>
-        <tfoot>
-            <tr class="table-dark">
-                <td colspan="3"><strong>Total</strong></td>
-                <td class="text-end"><strong>{{ invoice.total_points }}</strong></td>
-                <td class="text-end"><strong>${{ "%.2f"|format(invoice.total_amount) }}</strong></td>
-            </tr>
-        </tfoot>
+            <tfoot>
+                <tr class="table-secondary">
+                    <td colspan="3"><strong>Subtotal</strong></td>
+                    <td class="text-end"><strong>{{ invoice.total_points }}</strong></td>
+                    <td class="text-end"><strong>${{ "%.2f"|format(invoice.total_amount) }}</strong></td>
+                </tr>
+                <tr class="table-warning">
+                    <td colspan="4"><strong>Service Fee (1%)</strong></td>
+                    <td class="text-end"><strong>${{ "%.2f"|format(fee_amount) }}</strong></td>
+                </tr>
+                <tr class="table-dark">
+                    <td colspan="4"><strong>Total Due</strong></td>
+                    <td class="text-end"><strong>${{ "%.2f"|format(total_with_fee) }}</strong></td>
+                </tr>
+            </tfoot>
     </table>
     {% else %}
     <p class="text-muted">No line items found for this invoice period.</p>
