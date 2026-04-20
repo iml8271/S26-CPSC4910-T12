@@ -348,9 +348,38 @@ def bulk_upload():
         processed=processed
     )
 
+
 @admin_bp.route("/remove_link/<int:link_id>", methods=["POST"])
 def admin_remove_link(link_id):
-    remove_link(link_id=link_id,remover_id=g.profile.user_id)
+    remover_id = current_user.id
+    link = DriverCompanyLink.query.get(link_id)
+
+    if not link:
+        flash("Link not found.", "danger")
+        return redirect(url_for('admin.directory'))
+
+    is_sponsor = SponsorProfile.query.get(remover_id)
+
+    new_history = DriverPointsHistory(
+        link_id=link.id,
+        points_change=0,
+        current_points=link.current_points,
+        reason="Link Ended" if is_sponsor else "Link Ended by Admin",
+        sponsor_user_id=remover_id if is_sponsor else None
+    )
+
+    link.is_active = False
+    link.status_date = datetime.now()
+
+    try:
+        db.session.add(new_history)
+        db.session.commit()
+        flash("Driver successfully removed from company.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("An error occurred while removing the link.", "danger")
+        print(f"Error: {e}")
+
     return redirect(request.referrer or url_for('admin.directory'))
 
 @admin_bp.route("/update_points/<int:driver_id>", methods=["POST"])
