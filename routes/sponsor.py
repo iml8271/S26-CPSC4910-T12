@@ -78,14 +78,15 @@ def company_settings():
         try:
             points_conversion = request.form.get("point_conversion")
             if points_conversion:
-                sponsor.company.points_conversion = points_conversion
-                db.session.commit()
-                flash("Points Convert saved!", "success")
+                points_conversion = float(points_conversion)
+                if sponsor.company.points_conversion != points_conversion:
+                    sponsor.company.points_conversion = points_conversion
+                    db.session.commit()
+                    flash("Points Convert saved!", "success")
             if "sponsor_logo" in request.files:
                 file = request.files["sponsor_logo"]
 
-                if file.filename == "":
-                
+                if file.filename != "":
                     allowed_types = {"png","jpg","jpeg"}
                     extenstion = file.filename.rsplit(".",1)[1].lower() if "." in file.filename else None
 
@@ -105,15 +106,14 @@ def company_settings():
                             flash("Logo uploaded successfully!", "success")
                         else:
                             flash("Error: No associated company found.", "danger")
-                    
-                    return redirect(url_for("sponsor.sponsor_settings"))
             else:
                 flash("Invalid file type. Only PNG, JPG, and JPEG allowed.", "warning")
-                return redirect(url_for("sponsor.sponsor_settings"))
+                return redirect(url_for("sponsor.company_settings"))
         except Exception as e:
             db.session.rollback()
             print(f"Error updating settings: {e}")
             flash("An error occurred while saving.", "danger")
+        return redirect(url_for("sponsor.company_settings"))
     return render_template("sponsor/sponsor_settings.html", sponsor=sponsor)
 
 ## ACTIVE DRIVER_LIST --------------------------------
@@ -249,7 +249,17 @@ def add_drivers():
                         points_field = row[5].strip() if len(row) > 5 else ''
                         reason_field = row[6].strip() if len(row) > 6 else ''
 
+                        if org_name:
+                            error_log.append(f"Line {line_num}: Cannot contain company name. Skipped.")
+                            continue
+
                         # Points validation before calling helper
+                        points_present = bool(points_field)
+                        reason_present = bool(reason_field)
+                        if points_present != reason_present:
+                            error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
+                            continue
+
                         points = None
                         reason = None
                         if points_field:
@@ -268,7 +278,7 @@ def add_drivers():
                         error_log = bulk_line_upload(
                             line_num, error_log,
                             type=user_type,
-                            company_name=company.name,  # always use the sponsor's own company
+                            company_name=company.name,
                             firstname=firstname,
                             lastname=lastname,
                             email=email,

@@ -115,7 +115,8 @@ def handle_driver_signup():
             return render_template("driver/driver_signup.html", error="Password does not meet minimums",companies=companies)
         
         #Email Checker
-        #tba
+        if not is_valid_email(email):
+            return render_template("driver/driver_signup.html", error="Email not valid",companies=companies)
         if Users.query.filter_by(email=email).first():
             return render_template("driver/driver_signup.html", error="Email already registered",companies=companies)
 

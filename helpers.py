@@ -38,21 +38,26 @@ def validate_model(obj, model_name="Object"):
         db.session.add(obj)
     return obj
 
+def is_valid_email(email):
+    return '@' in email and email.endswith('.com')
+
 ## BULK UPLOAD
 # Bulk-Upload Driver
 
 # Validates Through a given line bfore redirecting it
 # Will return error if issue found
 def bulk_line_upload(line_num,error_log,type,company_name,firstname=None,lastname=None,email=None,points=None,reason=None):
-    # Validation
-    if not type or not company_name:
-        error_log.append(f"Line {line_num}: Missing fields. Skipped.")
-        return error_log
-    if type not in ("D","S","O"):
+    if not type or type not in ("D", "S", "O"):
         error_log.append(f"Line {line_num}: Invalid type (must be D,S,or O). Skipped.")
         return error_log
     
     if type=="O":
+        if not company_name:
+            error_log.append(f"Line {line_num}: O type missing organization name. Skipped.")
+            return error_log
+        if firstname or lastname or email:
+            error_log.append(f"Line {line_num}: O type should not have user fields. Skipped.")
+            return error_log
         company = SponsorCompany.query.filter_by(name=company_name).first()
         if company:
             error_log.append(f"Line {line_num}:Company {company_name} already exists. Skipped.")
@@ -63,23 +68,37 @@ def bulk_line_upload(line_num,error_log,type,company_name,firstname=None,lastnam
     if not firstname or not lastname or not email:
         error_log.append(f"Line {line_num}: Missing fields. Skipped.")
         return error_log
+    # Email validation
+    if not is_valid_email(email):
+        error_log.append(f"Line {line_num}: Invalid email format '{email}'. Skipped.")
+        return error_log
+    # Special character validation
+    forbidden_chars = set("'\\;")
+    for field in [company_name or '', firstname, lastname, email, reason or '']:
+        if any(c in field for c in forbidden_chars):
+            error_log.append(f"Line {line_num}: Invalid characters detected in fields. Skipped.")
+            return error_log
+    # Points/reason must come together
+    points_present = points is not None and points != ''
+    reason_present = reason is not None and reason != ''
+    if points_present != reason_present:
+        error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
+        return error_log
     # validate company
     company = SponsorCompany.query.filter_by(name=company_name).first()
     if not company:
         error_log.append(f"Line {line_num}:Company {company_name} cannot be found. Skipped.")
         return error_log
-    # unqiue check user
-    core_user = Users.query.filter_by(email=email).first()
-    if core_user:
-        error_log.append(f"Line {line_num}:Email {email} in use. Skipped.")
-        return error_log
+    
     if type == "S":
         if points or reason:
-            error_log.append(f"Line {line_num}:Point Fields were included. Ignored.")
-        bulk_sponsor(company.id,firstname=firstname,lastname=lastname,email=email)
+            error_log.append(f"Line {line_num}: Point fields were included for sponsor. Ignored.")
+        core_user = Users.query.filter_by(email=email).first()
+        if core_user:
+            error_log.append(f"Line {line_num}: Email {email} already in use. Skipped.")
+            return error_log
+        bulk_sponsor(company.id, firstname=firstname, lastname=lastname, email=email)
     elif type == "D":
-        if bool(points) != bool(reason):
-            error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
         bulk_driver(company.id,firstname,lastname,email,points,reason)
     return error_log
 
@@ -126,7 +145,8 @@ def bulk_driver(company_id,firstname,lastname,email,points=0,reason="Bulk-Upload
             points_change = points,
             current_points = points,
             update_date=datetime.now(),
-            reason = reason
+            reason=reason or "Bulk-Upload",
+            sponsor_user_id=None
         )
         db.session.add(base_points)
         db.session.commit()

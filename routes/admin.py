@@ -227,147 +227,126 @@ def delete_user(user_id):
     return redirect(url_for('admin.directory'))
 
 @admin_bp.route("/bulk_upload", methods=["GET","POST"])
-def bulk_upload():    
+def bulk_upload():
+    error_log = []
+    success_count = 0
+    processed = False
+
     if request.method == "POST":
-        # Check if the key exists in the request
         if "bulk_upload_file" not in request.files:
-            flash("File part missing in the request.", "danger")
-            return redirect(request.url)
+            error_log.append("File part missing in the request.")
 
-        bulk_file = request.files["bulk_upload_file"]
+        else:
+            bulk_file = request.files["bulk_upload_file"]
 
-        # Check if user actually selected a file
-        if bulk_file.filename == "":
-            flash("No file selected.", "warning")
-            return redirect(request.url)
+            if bulk_file.filename == "":
+                error_log.append("No file selected.")
 
-        # Clean the filename and check the extension
-        filename = secure_filename(bulk_file.filename)
-        if not filename.lower().endswith('.txt'):
-            flash('Invalid file type. Only .txt files are permitted.', 'danger')
-            return redirect(request.url)
-    
-        try: 
-            
-            bulk_file.stream.seek(0)
+            elif not secure_filename(bulk_file.filename).lower().endswith('.txt'):
+                error_log.append("Invalid file type. Only .txt files are permitted.")
 
-            data_stream = (line.decode('utf-8').strip() for line in bulk_file.stream)
-            # Remove empty strings
-            valid_lines = (line for line in data_stream if line)
+            else:
+                try:
+                    bulk_file.stream.seek(0)
+                    data_stream = (line.decode('utf-8').strip() for line in bulk_file.stream)
+                    valid_lines = (line for line in data_stream if line)
+                    reader = csv.reader(valid_lines, delimiter='|', quoting=csv.QUOTE_NONE)
+                    processed = True
 
-            reader = csv.reader(
-                valid_lines,
-                delimiter='|',
-                quoting=csv.QUOTE_NONE,
-            )
-            print(f"DEBUG: Filename is {bulk_file.filename}")
+                    for line_num, row in enumerate(reader, start=1):
+                        row = [field.strip() for field in row]
 
-            error_log = []
-            success_count = 0
+                        if len(row) < 1:
+                            error_log.append(f"Line {line_num}: Empty line. Skipped.")
+                            continue
 
-            print("--- Starting File Processing ---")
-            for line_num, row in enumerate(reader, start=1):
-                print(f"DEBUG: Line {line_num} content: {row}")
-                # Cleaning
-                row = [field.strip() for field in row]
+                        user_type = row[0].upper()
 
-                # Need at least type field
-                if len(row) < 1:
-                    error_log.append(f"Line {line_num}: Empty line. Skipped.")
-                    continue
+                        # Validate type
+                        if user_type not in ("D", "S", "O"):
+                            error_log.append(f"Line {line_num}: Invalid type '{row[0]}'. Must be D, S, or O. Skipped.")
+                            continue
 
-                user_type = row[0].upper()
+                        # O type — only needs org name, no user fields
+                        if user_type == "O":
+                            if len(row) < 2 or not row[1]:
+                                error_log.append(f"Line {line_num}: O type missing organization name. Skipped.")
+                                continue
+                            # O type should have no user fields
+                            if len(row) > 2 and any(row[2:]):
+                                error_log.append(f"Line {line_num}: O type should not have user fields. Skipped.")
+                                continue
+                            org_name = row[1]
+                            prev_error_count = len(error_log)
+                            error_log = bulk_line_upload(
+                                line_num, error_log,
+                                type=user_type,
+                                company_name=org_name
+                            )
+                            if len(error_log) == prev_error_count:
+                                success_count += 1
+                            continue
 
-                # Validate type early
-                if user_type not in ("D", "S", "O"):
-                    error_log.append(f"Line {line_num}: Invalid type '{row[0]}'. Must be D, S, or O. Skipped.")
-                    continue
+                        # D and S — need at least 5 fields
+                        if len(row) < 5:
+                            error_log.append(f"Line {line_num}: Too few fields (got {len(row)}). Skipped.")
+                            continue
 
-                # O type only needs the org name
-                if user_type == "O":
-                    if len(row) < 2 or not row[1]:
-                        error_log.append(f"Line {line_num}: O type missing organization name. Skipped.")
-                        continue
-                    org_name = row[1]
-                    error_log = bulk_line_upload(
-                        line_num, error_log,
-                        type=user_type,
-                        company_name=org_name
-                    )
-                    continue
-                # D and S types need at least 5 fields (type, org, first, last, email)
-                if len(row) < 5:
-                    error_log.append(f"Line {line_num}: Too few fields (got {len(row)}). Skipped.")
-                    continue
+                        org_name  = row[1]
+                        firstname = row[2]
+                        lastname  = row[3]
+                        email     = row[4].lower()
+                        points_field = row[5].strip() if len(row) > 5 else ''
+                        reason_field = row[6].strip() if len(row) > 6 else ''
 
-                org_name  = row[1]  # may be empty string for sponsor uploads
-                firstname = row[2]
-                lastname  = row[3]
-                email     = row[4].lower()
+                        # For admin uploads, org name is required for D and S
+                        if user_type in ("D", "S") and not org_name:
+                            error_log.append(f"Line {line_num}: Organization name is required for admins. Skipped.")
+                            continue
 
-                # Points and reason are optional
-                points_field = row[5].strip() if len(row) > 5 else ''
-                reason_field = row[6].strip() if len(row) > 6 else ''
+                        # Points and reason must come together
+                        points_present = bool(points_field)
+                        reason_present = bool(reason_field)
+                        if points_present != reason_present:
+                            error_log.append(f"Line {line_num}: Both points and reason are required if either is provided. Skipped.")
+                            continue
 
-                # Validate points if present
-                points = None
-                reason = None
-                if points_field:
-                    try:
-                        points = int(points_field)
-                    except ValueError:
-                        error_log.append(f"Line {line_num}: Points value '{points_field}' is not a valid integer. Skipped.")
-                        continue
-                    if not reason_field:
-                        error_log.append(f"Line {line_num}: Points provided but reason is missing. Skipped.")
-                        continue
-                    reason = reason_field
+                        points = None
+                        reason = None
+                        if points_field:
+                            try:
+                                points = int(points_field)
+                            except ValueError:
+                                error_log.append(f"Line {line_num}: Points value '{points_field}' is not a valid integer. Skipped.")
+                                continue
+                            reason = reason_field
 
-                error_log = bulk_line_upload(
-                    line_num, error_log,
-                    type=user_type,
-                    company_name=org_name,
-                    firstname=firstname,
-                    lastname=lastname,
-                    email=email,
-                    points=points,
-                    reason=reason
-                )
-                if error_log:
-                    for err in error_log:
-                        flash(err, "warning")
-                flash(f"Bulk upload complete.", "success")
-                return render_template(
-                    "admin/admin_bulk_upload.html", 
-                    error_log=error_log, 
-                    success_count=success_count,
-                    processed=True  # A flag to show the results div
-                    )
-        except Exception as e:
-            db.session.rollback()
-            flash(f"An unexpected error occurred: {str(e)}", "danger")
-            return render_template(
-                "admin/admin_bulk_upload.html", 
-                error_log=error_log, 
-                success_count=success_count,
-                processed=True  # A flag to show the results div
-                )
-        except UnicodeDecodeError:
-            flash("Error reading file: Ensure it is saved in UTF-8 encoding.", "danger")
-            return render_template(
-                "admin/admin_bulk_upload.html", 
-                error_log=error_log, 
-                success_count=success_count,
-                processed=True  # A flag to show the results div
-                )
-        
-        return render_template(
-        "admin/admin_bulk_upload.html", 
-        error_log=error_log, 
+                        prev_error_count = len(error_log)
+                        error_log = bulk_line_upload(
+                            line_num, error_log,
+                            type=user_type,
+                            company_name=org_name,
+                            firstname=firstname,
+                            lastname=lastname,
+                            email=email,
+                            points=points,
+                            reason=reason
+                        )
+                        if len(error_log) == prev_error_count:
+                            success_count += 1
+
+                except UnicodeDecodeError:
+                    error_log.append("Error reading file: Ensure it is saved in UTF-8 encoding.")
+                except Exception as e:
+                    db.session.rollback()
+                    error_log.append(f"An unexpected error occurred: {str(e)}")
+
+    return render_template(
+        "admin/admin_bulk_upload.html",
+        error_log=error_log,
         success_count=success_count,
-        processed=True  # A flag to show the results div
-        )
-    return render_template("admin/admin_bulk_upload.html")
+        processed=processed
+    )
 
 @admin_bp.route("/remove_link/<int:link_id>", methods=["POST"])
 def admin_remove_link(link_id):
