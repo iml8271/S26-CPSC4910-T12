@@ -29,7 +29,7 @@ class Users(UserMixin, db.Model):
     
 class PasswordChanges(db.Model):
     __tablename__ = "password_changes"
-    id = db.Column(db.Integer,primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # User ID
     user = db.relationship("Users")
     user_id = db.Column(db.Integer,db.ForeignKey('users.id'),nullable=False)

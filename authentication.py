@@ -219,35 +219,43 @@ def handle_sponsor_signup():
     return render_template("sponsor/sponsor_signup.html",companies=companies)
 
 # Forgot Password
-@auth_bp.route("/forgot_password", methods=["GET","POST"])
+@auth_bp.route("/forgot_password", methods=["GET", "POST"])
 def handle_forgot_password():
     if request.method == "POST":
-        username = request.form.get("username").strip()
-        password = request.form.get("password").strip()
-        reenter_password = request.form.get("reenter-password").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        reenter_password = request.form.get("confirm_password", "").strip()
 
         user = Users.query.filter_by(username=username).first()
         if not user:
-            return render_template("auth/signup.html",error="Username not found!")
+            return render_template("auth/forgotpassword.html", error="Username not found!")
 
-        # Checks if password meets minimum requirements:
-        # minimum 8 characters,no whitespaces,
-        # 1 Uppercase, 1 lowercase, 1 number
-        if (not password) or (not reenter_password):
-            return render_template("auht/forgotpassword.html", error="Password required")
-        
+        if not password or not reenter_password:
+            return render_template("auth/forgotpassword.html", error="Password required")
+
         if password != reenter_password:
-            return render_template("auht/forgotpassword.html", error="Passwords do not match")
+            return render_template("auth/forgotpassword.html", error="Passwords do not match")
 
         if not get_password_strength(password):
-            return render_template("auht/forgotpassword.html", error="Password does not meet minimums")
-        
-        if user:
-            user.password = generate_password_hash(password,method="pbkdf2:sha256")
+            return render_template("auth/forgotpassword.html", error="Password does not meet requirements")
+
+        try:
+            user.password = generate_password_hash(password, method="pbkdf2:sha256")
+            new_log = PasswordChanges(
+                user_id=user.id,
+                date=datetime.utcnow(),
+                change = "Password reset"
+            )
+            db.session.add(new_log)
             db.session.commit()
-            log_audit_event("password_reset", user_id=user.id, username=user.username, details="Via forgot password")
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Database Error: {e}")
+            return render_template("auth/forgotpassword.html", error="An internal error occurred.")
 
         return redirect(url_for("auth.handle_login"))
+
     return render_template("auth/forgotpassword.html")
 
 # Password Strength Calculator
