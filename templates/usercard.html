@@ -64,16 +64,7 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm rounded-pill px-4 flex-grow-1 flex-md-grow-0" 
-                                    style="background-color: #ff9800; color: white; border: none; font-weight: 600; box-shadow: 0 2px 4px rgba(255,152,0,0.3);"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#adjustPointsModal" 
-                                    data-driverid="{{ profile.id }}" 
-                                    data-drivername="{{ profile.driver_profile.firstname }} {{ profile.driver_profile.lastname }}"
-                                    data-companyid="{{ link.company.id }}"
-                                    data-action="{{ url_for('admin.update_points', driver_id=profile.id) }}">
-                                Edit Points
-                            </button>
+
 
                             <form action="{{ url_for('admin.admin_remove_link', link_id=link.id) }}" method="POST" 
                                 onsubmit="return confirm('Confirm removal of this sponsor?');" class="m-0 flex-grow-1 flex-md-grow-0">

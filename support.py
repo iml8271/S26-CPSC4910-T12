@@ -110,10 +110,10 @@ def user_view_requests():
 @login_required
 def user_view_requests_open():
     all_requests = SupportRequest.query.filter_by(source_id=current_user.id, status='Open')\
-                                                    .order_by(SupportRequest.creation_date.desc())
+                                                    .order_by(SupportRequest.creation_date.desc())\
+                                                    .all()
 
     return render_template('support/req_by_user.html', requests=all_requests)
-
 @supp_bp.route('/orgs', methods=['GET'])
 @login_required
 def get_orgs():
