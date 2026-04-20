@@ -242,7 +242,8 @@ def handle_forgot_password():
             user.password = generate_password_hash(password, method="pbkdf2:sha256")
             new_log = PasswordChanges(
                 user_id=user.id,
-                date=datetime.utcnow()
+                date=datetime.utcnow(),
+                change = "Password reset"
             )
             db.session.add(new_log)
             db.session.commit()
